@@ -52,3 +52,5 @@
 - Confirmed GitHub API access still worked and used the GitHub Git Data API as the push fallback.
 - GitHub API push succeeded for remote commit `386f850b1ad1527f3ef7615053957f6fb4e87717`.
 - Verified GitHub Actions CI completed successfully for `main`.
+- CI emitted a Node.js 20 Actions deprecation annotation despite using Node.js 24 for project setup.
+- Added `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` to the workflow environment to opt action runtimes into Node.js 24.
