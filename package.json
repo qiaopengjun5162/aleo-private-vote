@@ -1,0 +1,8 @@
+{
+  "name": "aleo-private-vote",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "check": "just check"
+  }
+}

@@ -1,0 +1,8 @@
+packages:
+  - "backend"
+  - "frontend"
+  - "client-ts"
+allowBuilds:
+  core-js: true
+  esbuild: true
+confirmModulesPurge: false

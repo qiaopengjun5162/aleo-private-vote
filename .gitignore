@@ -1,0 +1,9 @@
+node_modules/
+dist/
+target/
+.next/
+.env
+.env.local
+*.log
+screenshots/*.png
+!screenshots/.gitkeep

@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.4.0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @aleo-private-vote/backend typecheck
+      - run: pnpm --filter @aleo-private-vote/backend build
+      - run: pnpm --filter @aleo-private-vote/frontend typecheck
+      - run: pnpm --filter @aleo-private-vote/frontend build
+      - run: pnpm --filter @aleo-private-vote/client-ts typecheck
+      - run: pnpm --filter @aleo-private-vote/client-ts build
+      - run: cargo check --manifest-path client-rust/Cargo.toml
