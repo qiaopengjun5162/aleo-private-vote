@@ -48,6 +48,7 @@
 - Created the GitHub repository `qiaopengjun5162/aleo-private-vote`.
 - First push attempt failed with `Error in the HTTP2 framing layer`.
 - Local proxy retry failed because `127.0.0.1:7897` was not listening.
+- Later confirmed the active local GitHub proxy is `127.0.0.1:7890`; sandboxed commands may not see it, but escalated `curl -x http://127.0.0.1:7890 https://api.github.com/rate_limit` succeeds.
 - Git HTTP/1.1 retry failed because direct `github.com:443` timed out.
 - Confirmed GitHub API access still worked and used the GitHub Git Data API as the push fallback.
 - GitHub API push succeeded for remote commit `386f850b1ad1527f3ef7615053957f6fb4e87717`.

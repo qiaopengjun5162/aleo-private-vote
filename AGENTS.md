@@ -34,6 +34,7 @@
 - After every code or configuration change, update the relevant docs in the same change set.
 - Record what changed, what broke, and how it was fixed in `PROGRESS.md` before committing.
 - Each completed change set should be committed and pushed to GitHub.
+- When GitHub network access fails, retry with the local proxy `127.0.0.1:7890`; sandboxed commands may not reach it, so use approved escalation for GitHub checks when needed.
 - Use Node.js instead of Bun for `@provablehq/sdk` because Bun can hang during WASM thread-pool initialization.
 - Keep real testnet execution optional so the MVP remains demonstrable without faucet balance or network availability.
 - `client-ts` reads `leo/private_vote/build/main.aleo`; run `just leo-test` or `cd leo/private_vote && leo build` before SDK dry-runs.
