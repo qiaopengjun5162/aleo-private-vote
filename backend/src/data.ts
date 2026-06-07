@@ -18,7 +18,13 @@ export type VoteReport = {
   createdAt: string;
 };
 
-export const proposals: Proposal[] = [
+export type DemoStore = {
+  proposals: Proposal[];
+  reports: VoteReport[];
+};
+
+// Keeps the Bootcamp MVP dependency-free while preserving the API boundary for a real store.
+const seedProposals: Proposal[] = [
   {
     id: "proposal-privacy-grants",
     title: "Fund privacy-preserving grant reviews",
@@ -30,4 +36,9 @@ export const proposals: Proposal[] = [
   }
 ];
 
-export const reports: VoteReport[] = [];
+export function createDemoStore(): DemoStore {
+  return {
+    proposals: seedProposals.map((proposal) => ({ ...proposal })),
+    reports: []
+  };
+}

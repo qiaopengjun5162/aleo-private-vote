@@ -22,6 +22,8 @@
 - `just client-dry-run`: run the TypeScript SDK dry-run script
 - `just rust-dry-run`: run the Rust snarkVM client against local `build/main.aleo`
 - `just rust-execute-testnet`: broadcast `main 3u64 2u64` through the Rust snarkVM client
+- `pnpm --filter @aleo-private-vote/backend test`: run backend Vitest API tests
+- `pnpm --filter @aleo-private-vote/frontend test`: run frontend Vitest helper tests
 - `just deploy-testnet`: deploy the current Leo program to testnet with `PRIVATE_KEY`
 - `just execute-testnet`: execute `private_vote.aleo/main` on testnet with `PRIVATE_KEY`
 - `pnpm --filter @aleo-private-vote/frontend build`: type-check and build the DApp
@@ -41,3 +43,5 @@
 - Start the backend before the frontend for full-stack demos. If the API is unavailable, the frontend intentionally falls back to local demo mode.
 - Before running `just deploy-testnet`, confirm the Leo `program ...` id is unique on testnet; `private_vote.aleo` may need to be renamed for a real deployment.
 - `client-rust` dry-run can run without `PRIVATE_KEY`; testnet broadcast must use a funded testnet key from `.env`.
+- Use Vitest instead of Jest for this Vite-based TypeScript workspace; it keeps the test runner aligned with the frontend build tool while still covering backend code.
+- Keep comments focused on WHY a design exists. Avoid comments that simply restate the line of code.

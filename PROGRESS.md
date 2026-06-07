@@ -54,3 +54,17 @@
 - Verified GitHub Actions CI completed successfully for `main`.
 - CI emitted a Node.js 20 Actions deprecation annotation despite using Node.js 24 for project setup.
 - Added `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` to the workflow environment to opt action runtimes into Node.js 24.
+
+## 2026-06-08 Testing and Logic Documentation
+
+- Clarified the voting logic in `README.md` and `README_zh.md`.
+- Refactored the backend into `buildServer()` so API routes can be tested without opening a network port.
+- Added Vitest backend tests for proposals, ticket issuance, report submission, and malformed report validation.
+- Extracted frontend vote math into `voteFlow.ts` and added Vitest helper tests.
+- Added design-focused comments for the lightweight Leo demo verifier and in-memory Bootcamp store.
+- Updated `just check` and GitHub Actions CI to run backend and frontend Vitest tests.
+- Chose Vitest over Jest because this workspace is Vite-based and Vitest integrates with the same TypeScript/Vite toolchain.
+- Verified `cargo fmt --manifest-path client-rust/Cargo.toml -- --check`.
+- Verified `git diff --check`.
+- Verified `just check`: Leo tests, backend Vitest tests, frontend Vitest tests, builds, and Rust `cargo check` passed.
+- Verified `just client-dry-run` and `just rust-dry-run`: both returned `true`.

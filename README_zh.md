@@ -8,6 +8,24 @@ Aleo Private Vote 是一个为 Aleo 101 Bootcamp 准备的隐私投票 DApp MVP�
 
 投票天然需要隐私：外部可以看到公开计票结果，但不应该知道某个具体地址投了赞成还是反对。Aleo 的“本地隐私执行 + 公开验证”模型很适合这个场景。
 
+## 投票逻辑
+
+这个 MVP 有两层投票逻辑：
+
+1. **Leo 隐私模型**：`private_vote.aleo` 定义提案、私密票据 record、投票 record，以及提案信息、票据数量、赞成票、反对票这些公开 mapping。
+2. **演示验证路径**：`main(public agree_count, public disagree_count) -> bool` 判断公开计票是否满足 `agree >= disagree`。浏览器、TypeScript 客户端和 Rust 客户端都会本地执行这个函数，用一个很轻量的投票规则证明 Aleo 执行链路是通的。
+
+DApp 的交互流程是：
+
+1. 前端从后端加载提案。
+2. 用户请求一张私密票据，后端签发 demo ticket commitment，并增加 `ticketsIssued`。
+3. 用户选择 `Agree` 或 `Disagree`。
+4. 前端把下一轮公开计票传给 Aleo SDK Web Worker，执行 `private_vote.aleo/main`。
+5. SDK 执行返回 `true` 后，前端把 verification report 提交给后端。
+6. 后端保存 report，并返回更新后的公开计票。
+
+真实上链版本里，`propose`、`new_ticket`、`agree`、`disagree` 是 record 驱动的隐私投票流程。Bootcamp MVP 里先用轻量的 `main` 验证函数保证截图、CI 和本地演示都足够快，同时保留 Aleo 隐私执行的核心路径。
+
 ## 架构
 
 ```text
@@ -30,6 +48,8 @@ just frontend-dev
 just client-dry-run
 just rust-dry-run
 just rust-execute-testnet
+pnpm --filter @aleo-private-vote/backend test
+pnpm --filter @aleo-private-vote/frontend test
 just deploy-testnet
 just execute-testnet
 ```
@@ -64,6 +84,13 @@ just frontend-dev
 - `GET /api/proposals`：返回演示提案和公开计票。
 - `POST /api/tickets`：为提案签发一个私密票据 commitment。
 - `POST /api/reports`：保存验证报告，并返回更新后的计票结果。
+
+## 测试
+
+- Leo tests 覆盖合约投票规则。
+- 后端使用 Vitest + Fastify injection 测 API 行为。
+- 前端使用 Vitest 测纯投票计算逻辑。
+- `just check` 会跑 Leo 测试、TypeScript 类型检查、Vitest 测试、生产构建和 Rust `cargo check`。
 
 ## 浏览器 SDK 说明
 

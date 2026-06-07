@@ -7,6 +7,7 @@
     "build": "tsc",
     "dev": "pnpm start",
     "start": "pnpm build && node dist/server.js",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -17,6 +18,7 @@
   "devDependencies": {
     "@types/node": "^24.0.0",
     "tsx": "^4.19.2",
+    "vitest": "^4.0.0",
     "typescript": "^5.8.3"
   }
 }

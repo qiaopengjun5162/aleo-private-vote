@@ -4,53 +4,19 @@ import { createRoot } from "react-dom/client";
 import privateVoteProgram from "../../leo/private_vote/build/main.aleo?raw";
 import "./styles.css";
 import { AleoWorker } from "./workers/AleoWorker";
-
-type VoteChoice = "agree" | "disagree";
-type ApiStatus = "checking" | "connected" | "demo";
-
-type Proposal = {
-  id: string;
-  title: string;
-  description: string;
-  proposer: string;
-  agreeVotes: number;
-  disagreeVotes: number;
-  ticketsIssued: number;
-};
-
-type TicketReceipt = {
-  proposalId: string;
-  ticketCommitment: string;
-  ticketsIssued: number;
-  issuedAt: string;
-};
-
-type VoteReport = {
-  id: string;
-  proposalId: string;
-  vote: VoteChoice;
-  status: "verified";
-  ticketCommitment: string;
-  txId: string;
-  createdAt: string;
-  tally?: {
-    agreeVotes: number;
-    disagreeVotes: number;
-    ticketsIssued: number;
-  };
-};
+import {
+  calculateAgreePercent,
+  fallbackProposal,
+  mergeReportTally,
+  nextVoteCounts,
+  type ApiStatus,
+  type Proposal,
+  type TicketReceipt,
+  type VoteChoice,
+  type VoteReport
+} from "./voteFlow";
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8787";
-
-const fallbackProposal: Proposal = {
-  id: "proposal-privacy-grants",
-  title: "Fund privacy-preserving grant reviews",
-  description: "Allocate the next community grant round to privacy-preserving Aleo applications.",
-  proposer: "aleo1privatevoteproposer0000000000000000000000000000000000000",
-  agreeVotes: 12,
-  disagreeVotes: 3,
-  ticketsIssued: 21
-};
 
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -97,10 +63,9 @@ function App() {
     };
   }, []);
 
-  const totalVotes = proposal.agreeVotes + proposal.disagreeVotes;
   const agreePercent = useMemo(
-    () => Math.round((proposal.agreeVotes / Math.max(totalVotes, 1)) * 100),
-    [proposal.agreeVotes, totalVotes]
+    () => calculateAgreePercent(proposal.agreeVotes, proposal.disagreeVotes),
+    [proposal.agreeVotes, proposal.disagreeVotes]
   );
 
   async function issueTicket() {
@@ -156,12 +121,11 @@ function App() {
     setMessage("Running Aleo SDK local execution in a Web Worker...");
 
     try {
-      const nextAgreeVotes = proposal.agreeVotes + (choice === "agree" ? 1 : 0);
-      const nextDisagreeVotes = proposal.disagreeVotes + (choice === "disagree" ? 1 : 0);
+      const nextCounts = nextVoteCounts(proposal, choice);
       const worker = AleoWorker();
       const [output] = await worker.localProgramExecution(privateVoteProgram, "main", [
-        `${nextAgreeVotes}u64`,
-        `${nextDisagreeVotes}u64`
+        `${nextCounts.agreeVotes}u64`,
+        `${nextCounts.disagreeVotes}u64`
       ]);
 
       setProofResult(output);
@@ -182,12 +146,7 @@ function App() {
         );
 
         setReport(serverReport);
-        setProposal((current) => ({
-          ...current,
-          agreeVotes: serverReport.tally?.agreeVotes ?? nextAgreeVotes,
-          disagreeVotes: serverReport.tally?.disagreeVotes ?? nextDisagreeVotes,
-          ticketsIssued: serverReport.tally?.ticketsIssued ?? current.ticketsIssued
-        }));
+        setProposal((current) => mergeReportTally(current, serverReport, nextCounts));
         setMessage("Vote proof accepted and report stored by backend");
       } else {
         setReport({
@@ -201,8 +160,8 @@ function App() {
         });
         setProposal((current) => ({
           ...current,
-          agreeVotes: nextAgreeVotes,
-          disagreeVotes: nextDisagreeVotes
+          agreeVotes: nextCounts.agreeVotes,
+          disagreeVotes: nextCounts.disagreeVotes
         }));
         setMessage("Vote proof accepted in local demo mode");
       }

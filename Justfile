@@ -27,8 +27,10 @@ execute-testnet:
 check:
     just leo-test
     cd backend && pnpm typecheck
+    cd backend && pnpm test
     cd backend && pnpm build
     cd frontend && pnpm typecheck
+    cd frontend && pnpm test
     cd frontend && pnpm build
     cd client-ts && pnpm typecheck
     cd client-ts && pnpm build

@@ -8,6 +8,24 @@ The project starts from the official `ProvableHQ/leo-examples` voting example an
 
 Voting is a natural privacy use case: voters should be able to cast a choice without exposing how they voted, while the final tally should remain publicly verifiable. Aleo's local private execution and public verification model fits this workflow well.
 
+## Voting Logic
+
+The MVP has two layers of voting logic:
+
+1. **Leo privacy model**: `private_vote.aleo` defines proposals, ticket records, vote records, and public mappings for proposal metadata, ticket counts, agree votes, and disagree votes.
+2. **Demo verifier path**: `main(public agree_count, public disagree_count) -> bool` returns whether the public tally passes the rule `agree >= disagree`. The browser, TypeScript client, and Rust client all execute this function locally so the demo can prove a small voting rule quickly.
+
+The DApp flow is:
+
+1. The frontend loads a proposal from the backend.
+2. The user requests a private ticket; the backend issues a demo ticket commitment and increments `ticketsIssued`.
+3. The user chooses `Agree` or `Disagree`.
+4. The frontend runs `private_vote.aleo/main` in an Aleo SDK Web Worker with the next public tally.
+5. If the SDK execution returns `true`, the frontend submits a verification report to the backend.
+6. The backend stores the report and returns the updated public tally.
+
+In a real deployed version, `propose`, `new_ticket`, `agree`, and `disagree` are the on-chain private record flow. For the Bootcamp MVP, the lightweight `main` verifier keeps screenshots, CI, and local demos fast and reliable while still showing the Aleo privacy execution path.
+
 ## Architecture
 
 ```text
@@ -30,6 +48,8 @@ just frontend-dev
 just client-dry-run
 just rust-dry-run
 just rust-execute-testnet
+pnpm --filter @aleo-private-vote/backend test
+pnpm --filter @aleo-private-vote/frontend test
 just deploy-testnet
 just execute-testnet
 ```
@@ -64,6 +84,13 @@ The frontend uses `http://127.0.0.1:8787` by default. Override it with `VITE_API
 - `GET /api/proposals`: list demo proposals and public tallies.
 - `POST /api/tickets`: issue a private ticket commitment for a proposal.
 - `POST /api/reports`: store a verified demo vote report and return the updated tally.
+
+## Testing
+
+- Leo tests cover the voting rule in `leo/private_vote/tests`.
+- Vitest covers backend API behavior through Fastify injection.
+- Vitest covers frontend voting math through pure helper tests.
+- `just check` runs Leo tests, TypeScript type checks, Vitest tests, production builds, and Rust `cargo check`.
 
 ## Browser SDK Notes
 

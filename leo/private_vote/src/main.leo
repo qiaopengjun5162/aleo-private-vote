@@ -24,6 +24,7 @@ program private_vote.aleo {
     @noupgrade
     constructor() {}
 
+    // Keeps the demo cheap to prove while the record functions model the private ticket flow.
     fn main(public agree_count: u64, public disagree_count: u64) -> bool {
         return agree_count >= disagree_count;
     }

@@ -23,8 +23,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @aleo-private-vote/backend typecheck
+      - run: pnpm --filter @aleo-private-vote/backend test
       - run: pnpm --filter @aleo-private-vote/backend build
       - run: pnpm --filter @aleo-private-vote/frontend typecheck
+      - run: pnpm --filter @aleo-private-vote/frontend test
       - run: pnpm --filter @aleo-private-vote/frontend build
       - run: pnpm --filter @aleo-private-vote/client-ts typecheck
       - run: pnpm --filter @aleo-private-vote/client-ts build
