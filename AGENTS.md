@@ -12,7 +12,7 @@
 - `client-ts`: TypeScript SDK path for local dry-run and optional testnet execution
 - `client-rust`: Rust snarkVM client based on the local `hello/client-rust` project
 - `backend`: Lightweight API for proposals and demo verification reports
-- `frontend`: DApp interface for private voting and public tally reports
+- `frontend`: Next.js + React DApp interface with shadcn/ui-style components
 
 ## Commands
 
@@ -26,7 +26,7 @@
 - `pnpm --filter @aleo-private-vote/frontend test`: run frontend Vitest helper tests
 - `just deploy-testnet`: deploy the current Leo program to testnet with `PRIVATE_KEY`
 - `just execute-testnet`: execute `private_vote.aleo/main` on testnet with `PRIVATE_KEY`
-- `pnpm --filter @aleo-private-vote/frontend build`: type-check and build the DApp
+- `pnpm --filter @aleo-private-vote/frontend build`: run a Next.js production build
 - `pnpm --filter @aleo-private-vote/backend start`: compile and start the API on `127.0.0.1:8787`
 
 ## Notes
@@ -38,10 +38,12 @@
 - Keep real testnet execution optional so the MVP remains demonstrable without faucet balance or network availability.
 - `client-ts` reads `leo/private_vote/build/main.aleo`; run `just leo-test` or `cd leo/private_vote && leo build` before SDK dry-runs.
 - `client-ts` and `backend` compile TypeScript before running Node because `tsx` can fail to create IPC sockets in this sandbox.
-- The frontend mirrors the official React + Leo scaffold: load `build/main.aleo?raw`, run SDK code in a Web Worker, and keep `_headers` for COOP/COEP.
-- Vite worker output must stay `format: "es"` because `@provablehq/sdk` uses top-level await in browser worker bundles.
+- The frontend uses Next.js App Router, React, Tailwind CSS, and local shadcn/ui-style components.
+- Next serves `public/programs/private_vote.aleo`; refresh it from `leo/private_vote/build/main.aleo` after Leo program changes.
+- The browser SDK still runs inside a Web Worker; keep COOP/COEP headers in `next.config.ts` for SharedArrayBuffer support.
+- Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox and fails with `Operation not permitted`.
 - Start the backend before the frontend for full-stack demos. If the API is unavailable, the frontend intentionally falls back to local demo mode.
 - Before running `just deploy-testnet`, confirm the Leo `program ...` id is unique on testnet; `private_vote.aleo` may need to be renamed for a real deployment.
 - `client-rust` dry-run can run without `PRIVATE_KEY`; testnet broadcast must use a funded testnet key from `.env`.
-- Use Vitest instead of Jest for this Vite-based TypeScript workspace; it keeps the test runner aligned with the frontend build tool while still covering backend code.
+- Use Vitest instead of Jest for fast TypeScript unit coverage; it keeps tests lightweight while Next handles production builds.
 - Keep comments focused on WHY a design exists. Avoid comments that simply restate the line of code.

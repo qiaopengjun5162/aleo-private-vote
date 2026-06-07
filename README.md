@@ -34,7 +34,7 @@ aleo-private-vote/
   client-ts/         # Aleo SDK dry-run and optional testnet execution
   client-rust/       # snarkVM Rust client for local dry-run and testnet execution
   backend/           # Demo API for proposals and verification reports
-  frontend/          # DApp UI
+  frontend/          # Next.js + shadcn/ui-style DApp UI
   screenshots/       # Submission screenshots
 ```
 
@@ -67,7 +67,7 @@ just backend-dev
 just frontend-dev
 ```
 
-The frontend uses `http://127.0.0.1:8787` by default. Override it with `VITE_API_URL` when needed.
+The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUBLIC_API_URL` when needed.
 
 ## MVP Scope
 
@@ -94,13 +94,14 @@ The frontend uses `http://127.0.0.1:8787` by default. Override it with `VITE_API
 
 ## Browser SDK Notes
 
-The frontend follows the official React + Leo SDK scaffold pattern:
+The frontend now uses Next.js App Router, React, Tailwind CSS, and local shadcn/ui-style components:
 
-- Load the compiled Aleo instructions with `?raw`.
+- Serve the compiled Aleo instructions from `frontend/public/programs/private_vote.aleo`.
 - Run `initThreadPool()` inside a Web Worker.
 - Execute `ProgramManager.run()` locally before showing the verification report.
-- Ship `_headers` with `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` for `SharedArrayBuffer` support on static hosts.
-- Build Vite workers as ES modules because the SDK browser bundle uses top-level await.
+- Set `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` in `next.config.ts` for `SharedArrayBuffer` support.
+- Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox.
+- Keep `frontend/public/programs/private_vote.aleo` in sync with `leo/private_vote/build/main.aleo` after Leo program changes.
 
 ## Task 4 Testnet Path
 

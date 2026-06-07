@@ -34,7 +34,7 @@ aleo-private-vote/
   client-ts/         # Aleo SDK 本地 dry-run 和可选测试网上链
   client-rust/       # snarkVM Rust 客户端，本地 dry-run 和测试网执行
   backend/           # 提案和验证报告 API
-  frontend/          # 投票 DApp 界面
+  frontend/          # Next.js + shadcn/ui 风格投票 DApp 界面
   screenshots/       # 作业提交截图
 ```
 
@@ -67,7 +67,7 @@ just backend-dev
 just frontend-dev
 ```
 
-前端默认连接 `http://127.0.0.1:8787`。如果后端地址不同，可以通过 `VITE_API_URL` 覆盖。
+前端默认连接 `http://127.0.0.1:8787`。如果后端地址不同，可以通过 `NEXT_PUBLIC_API_URL` 覆盖。
 
 ## MVP 范围
 
@@ -94,13 +94,14 @@ just frontend-dev
 
 ## 浏览器 SDK 说明
 
-前端参考官方 React + Leo SDK 脚手架：
+前端现在使用 Next.js App Router、React、Tailwind CSS 和本地 shadcn/ui 风格组件：
 
-- 通过 `?raw` 加载编译后的 Aleo instructions。
+- 从 `frontend/public/programs/private_vote.aleo` 提供编译后的 Aleo instructions。
 - 在 Web Worker 中运行 `initThreadPool()`。
 - 用 `ProgramManager.run()` 做本地执行，再展示验证报告。
-- 提供 `_headers`，为静态部署开启 `SharedArrayBuffer` 所需的 COOP / COEP 头。
-- Vite worker 必须以 ES module 格式输出，因为 SDK 浏览器包使用 top-level await。
+- 在 `next.config.ts` 配置 COOP / COEP 头，为 `SharedArrayBuffer` 提供支持。
+- 使用 `next build --webpack`，因为 Next 16 的 Turbopack 在当前沙箱里会尝试绑定本地端口并触发 `Operation not permitted`。
+- Leo 程序变化后，需要把 `leo/private_vote/build/main.aleo` 同步到 `frontend/public/programs/private_vote.aleo`。
 
 ## Task 4 测试网路径
 

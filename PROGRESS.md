@@ -68,3 +68,20 @@
 - Verified `git diff --check`.
 - Verified `just check`: Leo tests, backend Vitest tests, frontend Vitest tests, builds, and Rust `cargo check` passed.
 - Verified `just client-dry-run` and `just rust-dry-run`: both returned `true`.
+
+## 2026-06-08 Next.js and shadcn/ui Migration
+
+- Migrated the frontend from Vite to Next.js App Router while keeping React and the existing Aleo SDK Web Worker path.
+- Added Tailwind CSS, shadcn/ui-style local components, `components.json`, and shared `cn()` utility.
+- Replaced the Vite `?raw` Aleo program import with `frontend/public/programs/private_vote.aleo`.
+- Replaced `VITE_API_URL` with `NEXT_PUBLIC_API_URL`.
+- Added `next.config.ts` headers for COOP / COEP because the browser SDK still needs SharedArrayBuffer support.
+- Allowed `sharp` in `pnpm-workspace.yaml`; Next.js installs it as a build/image dependency and pnpm blocks build scripts unless explicitly allowed.
+- Next 16 Turbopack failed in this sandbox with `Operation not permitted` while trying to bind a local port during CSS processing.
+- Switched frontend build/dev scripts to `next build --webpack` and `next dev --webpack`.
+- Added webpack `topLevelAwait` and `asyncFunction` output support for the Aleo browser SDK bundle; this removed the Next build warning about SDK top-level await.
+- Fixed local duplicate backend Vitest runs by excluding `dist/**` from backend Vitest and excluding test files from backend `tsc` output.
+- Verified `just check`: Leo tests, backend Vitest tests, frontend Vitest tests, Next production build, client-ts build, and Rust `cargo check` passed.
+- Verified Next production smoke test at `http://127.0.0.1:3000/` with COOP / COEP headers.
+- Verified `frontend/public/programs/private_vote.aleo` matches `leo/private_vote/build/main.aleo`.
+- Verified `just client-dry-run` and `just rust-dry-run`: both returned `true`.

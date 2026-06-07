@@ -2,8 +2,10 @@ node_modules/
 dist/
 target/
 .next/
+out/
 .env
 .env.local
 *.log
+*.tsbuildinfo
 screenshots/*.png
 !screenshots/.gitkeep

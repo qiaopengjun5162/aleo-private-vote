@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+:root {
+  color: #1c1917;
+  background: #eef0e8;
+  font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
