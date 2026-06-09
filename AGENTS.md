@@ -48,7 +48,7 @@
 - The frontend uses Next.js App Router, React, Tailwind CSS, and local shadcn/ui-style components.
 - Wallet integration uses official `@provablehq/aleo-wallet-adaptor-*` core/adapters with a custom React 19-compatible selector instead of the official React UI package, whose peer range is React 18.
 - The wallet adapter packages come from `ProvableHQ/aleo-dev-toolkit`; prefer those official packages for extension-wallet execution before considering custom wallet code.
-- Dynamic embedded wallet support is optional and gated by `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`; do not render or document it as enabled unless a real Dynamic environment is configured.
+- Dynamic embedded wallet support is optional and gated by `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`; the unified wallet modal may show it as disabled, but do not document it as enabled unless a real Dynamic environment is configured.
 - Current browser voting execution still uses the external wallet adapter `executeTransaction()` path. Do not claim Dynamic embedded wallet execution is wired until `proveTransaction()` is validated with a real environment and testnet account.
 - Wallet execution UI should show the program, function, inputs, network, public fee, and execution status before asking the user to approve a transaction.
 - Wallet transaction status checks use the frontend route `/api/testnet/transactions/[txId]`, which proxies `https://api.provable.com/v2/testnet/transaction/{txId}` by default and can be pointed elsewhere with `ALEO_TESTNET_API_URL`.
