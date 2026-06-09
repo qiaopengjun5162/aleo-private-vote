@@ -11,8 +11,13 @@
     "preview": "next start -H 127.0.0.1"
   },
   "dependencies": {
-    "@demox-labs/aleo-wallet-adapter-base": "^0.0.23",
-    "@demox-labs/aleo-wallet-adapter-leo": "^0.0.25",
+    "@provablehq/aleo-types": "0.3.0-alpha.4",
+    "@provablehq/aleo-wallet-adaptor-core": "0.3.0-alpha.4",
+    "@provablehq/aleo-wallet-adaptor-fox": "0.3.0-alpha.4",
+    "@provablehq/aleo-wallet-adaptor-leo": "0.3.0-alpha.4",
+    "@provablehq/aleo-wallet-adaptor-puzzle": "0.3.0-alpha.4",
+    "@provablehq/aleo-wallet-adaptor-shield": "0.3.0-alpha.4",
+    "@provablehq/aleo-wallet-standard": "0.3.0-alpha.4",
     "@provablehq/sdk": "^0.10.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -32,13 +32,13 @@ The project has two layers of voting logic:
 
 The DApp flow is:
 
-1. The user connects Leo Wallet in the frontend.
+1. The user connects a supported Aleo wallet in the frontend.
 2. The frontend loads a proposal from the backend.
 3. The user requests a private ticket; the backend issues a demo ticket commitment and increments `ticketsIssued`.
 4. The user chooses `Agree` or `Disagree`.
 5. The frontend runs `private_vote.aleo/main` in an Aleo SDK Web Worker with the next public tally.
-6. If the local SDK execution returns `true`, the frontend opens Leo Wallet and requests a testnet execution of `private_vote.aleo/main`.
-7. After Leo Wallet returns the transaction id, the frontend displays the Explorer link and submits a verification report to the backend.
+6. If the local SDK execution returns `true`, the frontend opens the connected wallet and requests a testnet execution of `private_vote.aleo/main`.
+7. After the wallet returns the transaction id, the frontend displays the Explorer link and submits a verification report to the backend.
 8. The backend stores the report and returns the updated public tally.
 
 In the full on-chain flow, `propose`, `new_ticket`, `agree`, and `disagree` model private record-based voting. The lightweight `main` verifier keeps local demos, CI, and SDK checks fast while still exercising the Aleo execution path.
@@ -89,10 +89,10 @@ The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUB
 ## Project Scope
 
 - Create and display voting proposals.
-- Connect Leo Wallet before issuing a ticket or casting a vote.
+- Connect a supported Aleo wallet before issuing a ticket or casting a vote.
 - Issue private voting tickets.
 - Cast agree or disagree votes.
-- Submit a Leo Wallet testnet execution for `private_vote.aleo/main`.
+- Submit an Aleo wallet testnet execution for `private_vote.aleo/main`.
 - Show public vote tallies.
 - Generate a local verification report for the demo.
 - Keep testnet execution available through both TypeScript SDK and Rust snarkVM clients.
@@ -118,7 +118,8 @@ The frontend now uses Next.js App Router, React, Tailwind CSS, and local shadcn/
 - Serve the compiled Aleo instructions from `frontend/public/programs/private_vote.aleo`.
 - Run `initThreadPool()` inside a Web Worker.
 - Execute `ProgramManager.run()` locally before showing the verification report.
-- Request Leo Wallet testnet execution after the local SDK check succeeds.
+- Use the official `@provablehq/aleo-wallet-adaptor-*` packages for wallet connection and execution.
+- Request wallet testnet execution after the local SDK check succeeds.
 - Set `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` in `next.config.ts` for `SharedArrayBuffer` support.
 - Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox.
 - Keep `frontend/public/programs/private_vote.aleo` in sync with `leo/private_vote/build/main.aleo` after Leo program changes.
@@ -152,10 +153,16 @@ The Rust client follows the working pattern from the local `hello/client-rust` p
 - `PRIVATE_KEY` is required for testnet broadcast. Dry-run uses a dev key if `PRIVATE_KEY` is not set.
 - `NODE_URL` defaults to `https://api.provable.com/v2/testnet`.
 
-## Current Limitations
+## Production Roadmap
 
-- The frontend wallet execution currently broadcasts the lightweight `main` verifier. It does not yet execute the full record-based `new_ticket`, `agree`, or `disagree` flow from the browser.
-- If the hosted backend is unavailable, the app still broadcasts the wallet execution but keeps the displayed tally in local demo state.
+This project is intentionally kept small, but it should still behave like a trustworthy product surface:
+
+- Move browser voting from the lightweight `main` verifier to the full record-based `new_ticket`, `agree`, and `disagree` flow.
+- Read proposal state and tallies from chain data instead of local demo state whenever possible.
+- Deploy the backend API with persistent storage, rate limits, and health checks.
+- Track wallet-submitted transactions through pending, accepted, and failed states.
+- Add clear recovery paths for rejected wallet signatures, insufficient fee balance, failed broadcasts, and unavailable wallet extensions.
+- Add end-to-end tests for connect wallet, issue ticket, approve execution, and Explorer-link display.
 
 ## References
 

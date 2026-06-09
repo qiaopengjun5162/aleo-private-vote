@@ -1,13 +1,12 @@
 "use client";
 
-import { Transaction, WalletAdapterNetwork } from "@demox-labs/aleo-wallet-adapter-base";
 import { CheckCircle2, ExternalLink, Fingerprint, ShieldCheck, Ticket, Vote } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { LeoWalletButton, useLeoWallet } from "@/wallet/LeoWalletProvider";
+import { AleoWalletButton, useAleoWallet } from "@/wallet/AleoWalletProvider";
 import { AleoWorker } from "@/workers/AleoWorker";
 import {
   calculateAgreePercent,
@@ -43,7 +42,7 @@ async function readProgram() {
 }
 
 export default function Home() {
-  const { connected: walletConnected, publicKey, requestExecution } = useLeoWallet();
+  const { connected: walletConnected, executeTransaction, publicKey } = useAleoWallet();
   const [proposal, setProposal] = useState<Proposal>(fallbackProposal);
   const [ticket, setTicket] = useState<TicketReceipt | null>(null);
   const [choice, setChoice] = useState<VoteChoice>("agree");
@@ -88,7 +87,7 @@ export default function Home() {
 
   async function issueTicket() {
     if (!walletConnected || !publicKey) {
-      setMessage("Connect Leo Wallet before issuing a private ticket.");
+      setMessage("Connect an Aleo wallet before issuing a private ticket.");
       return;
     }
 
@@ -141,13 +140,13 @@ export default function Home() {
   async function castVote() {
     if (!ticket) return;
     if (!walletConnected || !publicKey) {
-      setMessage("Connect Leo Wallet before casting a private vote.");
+      setMessage("Connect an Aleo wallet before casting a private vote.");
       return;
     }
 
     setIsProving(true);
     setOnChainTxId(null);
-    setMessage("Running local Aleo check before opening Leo Wallet...");
+    setMessage("Running local Aleo check before opening your wallet...");
 
     try {
       const nextCounts = nextVoteCounts(proposal, choice);
@@ -163,18 +162,14 @@ export default function Home() {
         throw new Error(`Local Aleo execution rejected the vote: ${output}`);
       }
 
-      setMessage("Open Leo Wallet and approve the testnet execution...");
-      const txId = await requestExecution(
-        Transaction.createTransaction(
-          publicKey,
-          WalletAdapterNetwork.Testnet,
-          programId,
-          "main",
-          [`${nextCounts.agreeVotes}u64`, `${nextCounts.disagreeVotes}u64`],
-          executionFeeMicrocredits,
-          false
-        )
-      );
+      setMessage("Open your Aleo wallet and approve the testnet execution...");
+      const txId = await executeTransaction({
+        program: programId,
+        function: "main",
+        inputs: [`${nextCounts.agreeVotes}u64`, `${nextCounts.disagreeVotes}u64`],
+        fee: executionFeeMicrocredits,
+        privateFee: false
+      });
       setOnChainTxId(txId);
 
       if (apiStatus === "connected") {
@@ -239,7 +234,7 @@ export default function Home() {
           </p>
         </div>
         <div className="flex flex-col items-start gap-3 md:items-end">
-          <LeoWalletButton />
+          <AleoWalletButton />
           <Badge>
             <ShieldCheck size={16} />
             {walletConnected ? (apiStatus === "connected" ? "wallet + on-chain + backend" : "wallet + on-chain") : "wallet required"}
@@ -249,7 +244,7 @@ export default function Home() {
 
       <section className="mx-auto mb-6 grid max-w-6xl gap-3 md:grid-cols-3">
         {[
-          ["1", walletConnected ? "Wallet connected" : "Connect Leo Wallet"],
+          ["1", walletConnected ? "Wallet connected" : "Connect Aleo wallet"],
           ["2", ticket ? "Ticket ready" : "Issue ticket"],
           ["3", onChainTxId ? "Execution submitted" : "Approve wallet execution"]
         ].map(([step, label]) => (

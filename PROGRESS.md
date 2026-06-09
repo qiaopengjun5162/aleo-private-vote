@@ -139,15 +139,24 @@
 
 ## 2026-06-09 Leo Wallet Connection
 
-- Added a frontend Leo Wallet provider using `@demox-labs/aleo-wallet-adapter-leo`.
+- Added the first frontend wallet provider and connected address display.
 - Added a wallet connect button and connected address display to the main DApp header.
 - Required a connected wallet before issuing a ticket or casting a vote.
 - Updated README documentation to describe the wallet-first DApp flow.
 
 ## 2026-06-09 Wallet Execution Path
 
-- Added Leo Wallet `requestExecution` support for `private_vote.aleo/main`.
+- Added wallet execution support for `private_vote.aleo/main`.
 - Changed the vote flow to run the local SDK check first, then request a wallet-approved testnet execution.
 - Display the returned wallet execution transaction id with a Provable Explorer link.
 - Added a compact three-step status strip so users can see the required flow at a glance.
 - Documented the current limitation that browser voting still uses the lightweight verifier, not the full record-based flow.
+
+## 2026-06-09 Official Wallet Adapter Migration
+
+- Migrated the frontend wallet integration to the official Aleo wallet adapter packages from the docs.
+- Replaced the old Demox Leo-only adapter with `@provablehq/aleo-wallet-adaptor-*`.
+- Added support for Leo, Shield, Puzzle, and Fox wallet adapters.
+- Switched wallet execution calls to the official `executeTransaction()` API.
+- Kept a custom React 19-compatible provider/button because the official React UI package currently peers React 18.
+- Reframed README limitations as a production roadmap covering record-based voting, chain state, backend persistence, transaction tracking, recovery paths, and E2E tests.

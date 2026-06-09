@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { LeoWalletProvider } from "@/wallet/LeoWalletProvider";
+import { AleoWalletProvider } from "@/wallet/AleoWalletProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Aleo Private Vote",
-  description: "A privacy-preserving Aleo voting DApp with Leo Wallet connection."
+  description: "A privacy-preserving Aleo voting DApp with Aleo wallet connection."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body>
-        <LeoWalletProvider>{children}</LeoWalletProvider>
+        <AleoWalletProvider>{children}</AleoWalletProvider>
       </body>
     </html>
   );

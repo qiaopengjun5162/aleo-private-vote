@@ -19,13 +19,13 @@ Aleo Private Vote 是一个基于 Aleo 的隐私投票 DApp，用于演示私密
 
 DApp 的交互流程是：
 
-1. 用户先在前端连接 Leo Wallet。
+1. 用户先在前端连接支持的 Aleo 钱包。
 2. 前端从后端加载提案。
 3. 用户请求一张私密票据，后端签发 demo ticket commitment，并增加 `ticketsIssued`。
 4. 用户选择 `Agree` 或 `Disagree`。
 5. 前端把下一轮公开计票传给 Aleo SDK Web Worker，执行 `private_vote.aleo/main`。
-6. 本地 SDK 执行返回 `true` 后，前端打开 Leo Wallet，请求广播一次 `private_vote.aleo/main` 测试网 execution。
-7. Leo Wallet 返回交易 id 后，前端展示 Explorer 链接，并把 verification report 发送给后端。
+6. 本地 SDK 执行返回 `true` 后，前端打开已连接的钱包，请求广播一次 `private_vote.aleo/main` 测试网 execution。
+7. 钱包返回交易 id 后，前端展示 Explorer 链接，并把 verification report 发送给后端。
 8. 后端保存 report，并返回更新后的公开计票。
 
 完整上链流程里，`propose`、`new_ticket`、`agree`、`disagree` 用于建模 record 驱动的隐私投票。轻量的 `main` 验证函数让本地演示、CI 和 SDK 检查保持快速，同时保留 Aleo 隐私执行的核心路径。
@@ -76,10 +76,10 @@ just frontend-dev
 ## 项目范围
 
 - 创建和展示投票提案。
-- 连接 Leo Wallet 后签发票据和投票。
+- 连接支持的 Aleo 钱包后签发票据和投票。
 - 发放私密投票票据。
 - 投赞成票或反对票。
-- 通过 Leo Wallet 广播 `private_vote.aleo/main` 测试网 execution。
+- 通过 Aleo 钱包广播 `private_vote.aleo/main` 测试网 execution。
 - 展示公开计票结果。
 - 生成本地验证报告用于演示。
 - 通过 TypeScript SDK 和 Rust snarkVM 客户端保留测试网执行入口。
@@ -105,7 +105,8 @@ just frontend-dev
 - 从 `frontend/public/programs/private_vote.aleo` 提供编译后的 Aleo instructions。
 - 在 Web Worker 中运行 `initThreadPool()`。
 - 用 `ProgramManager.run()` 做本地执行，再展示验证报告。
-- 本地 SDK 检查通过后，请求 Leo Wallet 广播测试网 execution。
+- 使用官方 `@provablehq/aleo-wallet-adaptor-*` 包接入钱包连接和 execution。
+- 本地 SDK 检查通过后，请求钱包广播测试网 execution。
 - 在 `next.config.ts` 配置 COOP / COEP 头，为 `SharedArrayBuffer` 提供支持。
 - 使用 `next build --webpack`，因为 Next 16 的 Turbopack 在当前沙箱里会尝试绑定本地端口并触发 `Operation not permitted`。
 - Leo 程序变化后，需要把 `leo/private_vote/build/main.aleo` 同步到 `frontend/public/programs/private_vote.aleo`。
@@ -139,10 +140,16 @@ Rust 客户端参考当前目录里已经调通的 `hello/client-rust` 项目：
 - 测试网广播需要 `PRIVATE_KEY`；dry-run 未设置 `PRIVATE_KEY` 时使用开发用私钥。
 - `NODE_URL` 默认是 `https://api.provable.com/v2/testnet`。
 
-## 当前限制
+## 生产级路线
 
-- 前端钱包执行目前广播的是轻量 `main` 验证函数，还没有在浏览器里完整执行 record 驱动的 `new_ticket`、`agree` 或 `disagree` 流程。
-- 如果线上后端不可用，应用仍会广播钱包 execution，但页面上的计票会保留为本地 demo 状态。
+这个项目可以很小，但产品体验仍然应该可信、清楚、可恢复：
+
+- 把浏览器投票从轻量 `main` 验证函数升级到完整 record 驱动的 `new_ticket`、`agree`、`disagree` 流程。
+- 尽可能从链上数据读取提案状态和计票结果，而不是依赖本地 demo 状态。
+- 部署带持久化存储、限流和健康检查的后端 API。
+- 跟踪钱包提交交易的 pending、accepted、failed 状态。
+- 为用户拒签、手续费不足、广播失败、钱包扩展不可用等情况提供清楚的恢复路径。
+- 增加端到端测试，覆盖连接钱包、签发票据、批准 execution 和 Explorer 链接展示。
 
 ## 许可证
 
