@@ -272,3 +272,6 @@
 - Classified rejected wallet signatures or requests, insufficient testnet balance, unavailable wallet extensions, disconnected wallets, failed broadcasts, wallet-history failures, and testnet API outages.
 - Routed wallet connection, wallet history, signature proof, wallet execution, wallet execution status, and testnet acceptance checks through the recovery helper instead of showing only raw adapter errors.
 - Added Vitest coverage for recovery message extraction and the main failure classifications.
+- PR #13 was merged into `main`, and Vercel deployment `dpl_B9TzMjBhWvAr7x8YYZuS2R33EyxH` is Ready.
+- `aleo-private-vote.vercel.app` points to `aleo-private-vote-8pqhgrnxm-qiaopengjuns-projects.vercel.app`.
+- Verified the deployment and alias through Vercel CLI. Production HTTP smoke from this environment could not complete because shell curl and Browser access to the Vercel domain timed out or reset after deployment.
