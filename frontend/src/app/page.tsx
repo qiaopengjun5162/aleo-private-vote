@@ -5,14 +5,17 @@ import {
   CheckCircle2,
   ExternalLink,
   Fingerprint,
+  Flag,
   History,
   KeyRound,
+  ListChecks,
+  PlusCircle,
   RefreshCw,
   ShieldCheck,
   Ticket,
   Vote
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,9 +40,14 @@ import {
 import { AleoWorker } from "@/workers/AleoWorker";
 import {
   calculateAgreePercent,
+  canVoteOnProposal,
+  closeProposal,
+  createLocalProposal,
   fallbackProposal,
   mergeReportTally,
   nextVoteCounts,
+  proposalOutcome,
+  proposalStatusLabel,
   type ApiStatus,
   type Proposal,
   type TicketReceipt,
@@ -110,7 +118,8 @@ export default function Home() {
     signMessage,
     transactionStatus: checkWalletTransactionStatus
   } = useAleoWallet();
-  const [proposal, setProposal] = useState<Proposal>(fallbackProposal);
+  const [proposals, setProposals] = useState<Proposal[]>([fallbackProposal]);
+  const [selectedProposalId, setSelectedProposalId] = useState(fallbackProposal.id);
   const [ticket, setTicket] = useState<TicketReceipt | null>(null);
   const [choice, setChoice] = useState<VoteChoice>("agree");
   const [report, setReport] = useState<VoteReport | null>(null);
@@ -132,16 +141,24 @@ export default function Home() {
   const [walletSignatureProof, setWalletSignatureProof] = useState<WalletSignatureProof | null>(null);
   const [walletSignatureMessage, setWalletSignatureMessage] = useState("Connect a wallet to sign an ownership challenge.");
   const [recoveryNotice, setRecoveryNotice] = useState<RecoveryNotice | null>(null);
+  const [proposalTitle, setProposalTitle] = useState("");
+  const [proposalDescription, setProposalDescription] = useState("");
+  const [isCreatingProposal, setIsCreatingProposal] = useState(false);
+  const [isClosingProposal, setIsClosingProposal] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadProposal() {
       try {
-        const proposals = await readJson<Proposal[]>(await fetch(`${apiBaseUrl}/api/proposals`));
+        const loadedProposals = await readJson<Proposal[]>(await fetch(`${apiBaseUrl}/api/proposals`));
         if (cancelled) return;
 
-        setProposal(proposals[0] ?? fallbackProposal);
+        const nextProposals = loadedProposals.length > 0 ? loadedProposals : [fallbackProposal];
+        setProposals(nextProposals);
+        setSelectedProposalId((current) =>
+          nextProposals.some((proposal) => proposal.id === current) ? current : nextProposals[0].id
+        );
         setApiStatus("connected");
         setMessage("Backend API connected");
       } catch (error) {
@@ -329,6 +346,13 @@ export default function Home() {
     setRecoveryNotice(createRecoveryNotice(walletError, "wallet-connect"));
   }, [walletError]);
 
+  const proposal = useMemo(
+    () => proposals.find((item) => item.id === selectedProposalId) ?? proposals[0] ?? fallbackProposal,
+    [proposals, selectedProposalId]
+  );
+  const proposalCanReceiveVotes = canVoteOnProposal(proposal);
+  const proposalStatus = proposalStatusLabel(proposal);
+  const currentOutcome = proposalOutcome(proposal);
   const agreePercent = useMemo(
     () => calculateAgreePercent(proposal.agreeVotes, proposal.disagreeVotes),
     [proposal.agreeVotes, proposal.disagreeVotes]
@@ -369,6 +393,120 @@ export default function Home() {
     }
     if (context === "wallet-execution") {
       void castVote();
+    }
+  }
+
+  function resetVoteSession(nextMessage?: string) {
+    setTicket(null);
+    setReport(null);
+    setWalletExecutionId(null);
+    setWalletAdapterStatus(null);
+    setWalletStatusMessage("Wallet execution status is available after approval.");
+    setOnChainTxId(null);
+    setTestnetTransactionStatus(null);
+    setExecutionStatus("idle");
+    setProofResult("not-run");
+    setRecoveryNotice(null);
+    if (nextMessage) setMessage(nextMessage);
+  }
+
+  function updateProposal(updatedProposal: Proposal) {
+    setProposals((current) => current.map((item) => (item.id === updatedProposal.id ? updatedProposal : item)));
+  }
+
+  function updateSelectedProposal(updater: (current: Proposal) => Proposal) {
+    setProposals((current) => current.map((item) => (item.id === proposal.id ? updater(item) : item)));
+  }
+
+  function selectProposal(proposalId: string) {
+    setSelectedProposalId(proposalId);
+    resetVoteSession("Proposal selected. Issue a ticket before voting.");
+  }
+
+  async function createProposal(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!walletConnected || !publicKey) {
+      setMessage("Connect an Aleo wallet before creating a proposal.");
+      setRecoveryNotice(createRecoveryNotice("Connect an Aleo wallet before creating a proposal.", "wallet-connect"));
+      return;
+    }
+
+    const title = proposalTitle.trim();
+    const description = proposalDescription.trim();
+    if (title.length < 4 || description.length < 12) {
+      setMessage("Proposal title and description are too short.");
+      return;
+    }
+
+    setIsCreatingProposal(true);
+    setRecoveryNotice(null);
+
+    try {
+      const createdProposal =
+        apiStatus === "connected"
+          ? await readJson<Proposal>(
+              await fetch(`${apiBaseUrl}/api/proposals`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ description, proposer: publicKey, title })
+              })
+            )
+          : createLocalProposal({ description, proposer: publicKey, title });
+
+      setProposals((current) => [createdProposal, ...current]);
+      setSelectedProposalId(createdProposal.id);
+      setProposalTitle("");
+      setProposalDescription("");
+      resetVoteSession(apiStatus === "connected" ? "Proposal created by backend API." : "Proposal created locally for demo mode.");
+    } catch (error) {
+      const localProposal = createLocalProposal({ description, proposer: publicKey, title });
+      setApiStatus("demo");
+      setProposals((current) => [localProposal, ...current]);
+      setSelectedProposalId(localProposal.id);
+      setProposalTitle("");
+      setProposalDescription("");
+      resetVoteSession(
+        error instanceof Error
+          ? `Backend proposal failed, created a local demo proposal: ${error.message}`
+          : "Backend proposal failed, created a local demo proposal."
+      );
+    } finally {
+      setIsCreatingProposal(false);
+    }
+  }
+
+  async function closeSelectedProposal() {
+    if (!proposalCanReceiveVotes) return;
+
+    setIsClosingProposal(true);
+    setRecoveryNotice(null);
+
+    try {
+      const closedProposal =
+        apiStatus === "connected"
+          ? await readJson<Proposal>(
+              await fetch(`${apiBaseUrl}/api/proposals/${proposal.id}/close`, {
+                method: "POST"
+              })
+            )
+          : closeProposal(proposal);
+
+      updateProposal(closedProposal);
+      resetVoteSession(`Proposal closed as ${closedProposal.status}.`);
+    } catch (error) {
+      const closedProposal = closeProposal(proposal);
+      setApiStatus("demo");
+      updateProposal(closedProposal);
+      resetVoteSession(
+        error instanceof Error
+          ? `Backend close failed, closed locally as ${closedProposal.status}: ${error.message}`
+          : `Backend close failed, closed locally as ${closedProposal.status}.`
+      );
+    } finally {
+      setIsClosingProposal(false);
     }
   }
 
@@ -459,6 +597,10 @@ export default function Home() {
       setRecoveryNotice(createRecoveryNotice("Connect an Aleo wallet before issuing a private ticket.", "wallet-connect"));
       return;
     }
+    if (!proposalCanReceiveVotes) {
+      setMessage("This proposal is closed. Select or create an active proposal before issuing a ticket.");
+      return;
+    }
 
     setRecoveryNotice(null);
     setIsIssuing(true);
@@ -484,7 +626,7 @@ export default function Home() {
         );
 
         setTicket(receipt);
-        setProposal((current) => ({
+        updateSelectedProposal((current) => ({
           ...current,
           ticketsIssued: receipt.ticketsIssued
         }));
@@ -499,7 +641,7 @@ export default function Home() {
         issuedAt: new Date().toISOString()
       };
       setTicket(receipt);
-      setProposal((current) => ({
+      updateSelectedProposal((current) => ({
         ...current,
         ticketsIssued: current.ticketsIssued + 1
       }));
@@ -517,6 +659,10 @@ export default function Home() {
     if (!walletConnected || !publicKey) {
       setMessage("Connect an Aleo wallet before casting a private vote.");
       setRecoveryNotice(createRecoveryNotice("Connect an Aleo wallet before casting a private vote.", "wallet-execution"));
+      return;
+    }
+    if (!proposalCanReceiveVotes) {
+      setMessage("This proposal is closed. Select or create an active proposal before voting.");
       return;
     }
 
@@ -573,7 +719,7 @@ export default function Home() {
           ...serverReport,
           txId: reportTxId
         });
-        setProposal((current) => mergeReportTally(current, serverReport, plannedVoteCounts));
+        updateSelectedProposal((current) => mergeReportTally(current, serverReport, plannedVoteCounts));
         setMessage("Wallet execution submitted and backend report stored");
       } else {
         setReport({
@@ -585,7 +731,7 @@ export default function Home() {
           txId: reportTxId,
           createdAt: new Date().toISOString()
         });
-        setProposal((current) => ({
+        updateSelectedProposal((current) => ({
           ...current,
           agreeVotes: plannedVoteCounts.agreeVotes,
           disagreeVotes: plannedVoteCounts.disagreeVotes
@@ -629,10 +775,12 @@ export default function Home() {
       <section className="mx-auto mb-6 grid max-w-6xl gap-3 md:grid-cols-3">
         {[
           ["1", walletConnected ? "Wallet connected" : "Connect Aleo wallet"],
-          ["2", ticket ? "Ticket ready" : "Issue ticket"],
+          ["2", proposalCanReceiveVotes ? (ticket ? "Ticket ready" : "Issue ticket") : "Proposal closed"],
           [
             "3",
-            testnetTransactionStatus?.status === "accepted"
+            !proposalCanReceiveVotes
+              ? proposalStatus
+              : testnetTransactionStatus?.status === "accepted"
               ? "Execution accepted"
               : onChainTxId
                 ? "Checking testnet status"
@@ -648,15 +796,111 @@ export default function Home() {
         ))}
       </section>
 
+      <section className="mx-auto mb-6 grid max-w-6xl gap-4 lg:grid-cols-[1fr_1fr]">
+        <div className="rounded-md border border-stone-950 bg-white p-4 shadow-[4px_4px_0_#1c1917]">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="inline-flex items-center gap-2 text-xs font-black uppercase text-[#6f3d2f]">
+              <ListChecks size={14} />
+              Proposal room
+            </p>
+            <span className="rounded-sm border border-stone-950 bg-[#eef0e8] px-2 py-1 text-xs font-black uppercase">
+              {proposals.length} total
+            </span>
+          </div>
+          <div className="grid gap-2">
+            {proposals.map((item) => {
+              const selected = item.id === proposal.id;
+              return (
+                <button
+                  className={`rounded-md border border-stone-950 p-3 text-left transition hover:-translate-y-0.5 ${
+                    selected ? "bg-[#d9ff65] shadow-[4px_4px_0_#1c1917]" : "bg-[#fffff8] hover:bg-[#f4e4cf]"
+                  }`}
+                  key={item.id}
+                  onClick={() => selectProposal(item.id)}
+                  type="button"
+                >
+                  <span className="flex items-start justify-between gap-3">
+                    <strong className="min-w-0 text-sm">{item.title}</strong>
+                    <span className="shrink-0 rounded-sm border border-stone-950 bg-white px-1.5 py-0.5 text-[10px] font-black uppercase">
+                      {item.status}
+                    </span>
+                  </span>
+                  <span className="mt-1 block text-xs font-bold text-stone-600">
+                    {item.agreeVotes} agree / {item.disagreeVotes} disagree / {item.ticketsIssued} tickets
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <form
+          className="rounded-md border border-stone-950 bg-[#f4e4cf] p-4 shadow-[4px_4px_0_#1c1917]"
+          onSubmit={(event) => void createProposal(event)}
+        >
+          <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase text-[#6f3d2f]">
+            <PlusCircle size={14} />
+            Create proposal
+          </p>
+          <div className="grid gap-3">
+            <label className="grid gap-1 text-sm font-black">
+              Title
+              <input
+                className="h-11 rounded-md border border-stone-950 bg-white px-3 font-bold outline-none focus:ring-2 focus:ring-[#c8492d]"
+                maxLength={80}
+                minLength={4}
+                onChange={(event) => setProposalTitle(event.target.value)}
+                placeholder="e.g. Fund private reviewer elections"
+                value={proposalTitle}
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-black">
+              Description
+              <textarea
+                className="min-h-24 resize-none rounded-md border border-stone-950 bg-white px-3 py-2 font-bold outline-none focus:ring-2 focus:ring-[#c8492d]"
+                maxLength={280}
+                minLength={12}
+                onChange={(event) => setProposalDescription(event.target.value)}
+                placeholder="What should voters decide?"
+                value={proposalDescription}
+              />
+            </label>
+            <Button disabled={!walletConnected || isCreatingProposal} type="submit" variant="primary">
+              <PlusCircle size={16} />
+              {isCreatingProposal ? "Creating..." : walletConnected ? "Create proposal" : "Connect wallet to create"}
+            </Button>
+          </div>
+        </form>
+      </section>
+
       <section className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <Card>
           <CardContent>
             <CardHeader className="mb-6">
-              <div className="inline-flex items-center gap-2 text-sm font-black text-[#6f3d2f]">
-                <Vote size={20} />
-                Proposal
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <div className="inline-flex items-center gap-2 text-sm font-black text-[#6f3d2f]">
+                    <Vote size={20} />
+                    Proposal
+                  </div>
+                  <CardTitle>{proposal.title}</CardTitle>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-sm border border-stone-950 bg-[#d9ff65] px-2 py-1 text-xs font-black uppercase">
+                    {proposalStatus}
+                  </span>
+                  <Button
+                    disabled={!proposalCanReceiveVotes || isClosingProposal}
+                    onClick={() => void closeSelectedProposal()}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    <Flag size={14} />
+                    {isClosingProposal ? "Closing..." : "Close proposal"}
+                  </Button>
+                </div>
               </div>
-              <CardTitle>{proposal.title}</CardTitle>
             </CardHeader>
 
             <p className="leading-7 text-stone-700">{proposal.description}</p>
@@ -678,9 +922,15 @@ export default function Home() {
                   </code>
                 ) : null}
               </div>
-              <Button disabled={!walletConnected || isIssuing || isProving} onClick={issueTicket}>
+              <Button disabled={!walletConnected || !proposalCanReceiveVotes || isIssuing || isProving} onClick={issueTicket}>
                 <Ticket size={16} />
-                {isIssuing ? "Issuing..." : walletConnected ? "Issue ticket" : "Connect wallet first"}
+                {isIssuing
+                  ? "Issuing..."
+                  : !walletConnected
+                    ? "Connect wallet first"
+                    : proposalCanReceiveVotes
+                      ? "Issue ticket"
+                      : "Proposal closed"}
               </Button>
             </div>
 
@@ -695,13 +945,19 @@ export default function Home() {
 
             <Button
               className="w-full"
-              disabled={!walletConnected || !ticket || isProving}
+              disabled={!walletConnected || !ticket || !proposalCanReceiveVotes || isProving}
               onClick={castVote}
               size="lg"
               variant="primary"
             >
               <Fingerprint size={18} />
-              {isProving ? "Generating proof..." : walletConnected ? "Cast private vote" : "Connect wallet to vote"}
+              {isProving
+                ? "Generating proof..."
+                : !walletConnected
+                  ? "Connect wallet to vote"
+                  : proposalCanReceiveVotes
+                    ? "Cast private vote"
+                    : "Proposal closed"}
             </Button>
 
             <p className="mt-4 text-sm font-black text-[#6f3d2f]">{message}</p>
@@ -899,6 +1155,31 @@ export default function Home() {
             </div>
 
             <Progress value={agreePercent} />
+
+            <div className="mt-4 rounded-md border border-stone-950 bg-white p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase text-[#6f3d2f]">
+                    {proposalCanReceiveVotes ? "Current outcome" : "Final outcome"}
+                  </p>
+                  <strong className="mt-1 block text-xl">{proposalStatus}</strong>
+                </div>
+                <span
+                  className={`w-fit rounded-sm border border-stone-950 px-2 py-1 text-xs font-black uppercase ${
+                    currentOutcome === "passing" ? "bg-[#d9ff65]" : "bg-[#f4c8be]"
+                  }`}
+                >
+                  agree &gt;= disagree
+                </span>
+              </div>
+              {proposal.closedAt ? (
+                <p className="mt-2 text-xs font-bold text-stone-600">Closed at {proposal.closedAt}</p>
+              ) : (
+                <p className="mt-2 text-xs font-bold text-stone-600">
+                  The proposal can still change while it is active. Closing it freezes the current outcome.
+                </p>
+              )}
+            </div>
 
             <div className="my-6 grid grid-cols-3 gap-3">
               {[

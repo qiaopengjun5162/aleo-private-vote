@@ -20,14 +20,15 @@ Aleo Private Vote 是一个基于 Aleo 的隐私投票 DApp，用于演示私密
 DApp 的交互流程是：
 
 1. 用户先在前端连接支持的 Aleo 钱包。
-2. 用户可以签名一个 ownership challenge，前端会用已连接的 Aleo 地址本地验证签名。
-3. 前端从后端加载提案。
-4. 用户请求一张私密票据，后端签发 demo ticket commitment，并增加 `ticketsIssued`。
+2. 用户在 proposal room 里选择现有提案，或者用当前钱包地址创建一个 demo 提案。
+3. 用户可以签名一个 ownership challenge，前端会用已连接的 Aleo 地址本地验证签名。
+4. 用户为当前 active 提案请求一张私密票据，后端签发 demo ticket commitment，并增加 `ticketsIssued`。
 5. 用户选择 `Agree` 或 `Disagree`。
 6. 前端把下一轮公开计票传给 Aleo SDK Web Worker，执行 `private_vote.aleo/main`。
 7. 本地 SDK 执行返回 `true` 后，前端打开已连接的钱包，请求广播一次 `private_vote.aleo/main` 测试网 execution。
 8. 钱包返回交易 id 后，前端展示 Explorer 链接，并把 verification report 发送给后端。
 9. 后端保存 report，并返回更新后的公开计票。
+10. 用户可以关闭提案，按当前 `agree >= disagree` 规则把结果固定为 `passed` 或 `failed`。
 
 完整上链流程里，`propose`、`new_ticket`、`agree`、`disagree` 用于建模 record 驱动的隐私投票。轻量的 `main` 验证函数让本地演示、CI 和 SDK 检查保持快速，同时保留 Aleo 隐私执行的核心路径。
 
@@ -76,12 +77,13 @@ just frontend-dev
 
 ## 项目范围
 
-- 创建和展示投票提案。
+- 创建、选择、关闭和展示 demo 投票提案。
 - 连接 Leo、Shield、Puzzle 或 Fox Wallet 后签发票据和投票。
 - 配置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` 后，可启用 Dynamic 嵌入式 Aleo 钱包入口。
 - 通过 `signMessage()` 签名 ownership challenge，并用当前连接地址本地验签。
 - 发放私密投票票据。
-- 投赞成票或反对票。
+- 每张 demo ticket 投一次赞成票或反对票。
+- 展示提案当前结果和关闭后的最终结果，规则是 `agree >= disagree` 即通过。
 - 通过 Aleo 钱包广播 `private_vote.aleo/main` 测试网 execution。
 - 钱包批准前展示 execution request，包括 program、function、inputs、network 和 public fee。
 - 跟踪钱包提交后的 testnet transaction 状态：checking、pending、accepted 或 unavailable。
@@ -116,6 +118,8 @@ NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @al
 
 - `GET /health`：健康检查。
 - `GET /api/proposals`：返回演示提案和公开计票。
+- `POST /api/proposals`：创建一个内存里的 demo 提案。
+- `POST /api/proposals/:proposalId/close`：关闭 active demo 提案，并标记为 passed 或 failed。
 - `POST /api/tickets`：为提案签发一个私密票据 commitment。
 - `POST /api/reports`：保存验证报告，并返回更新后的计票结果。
 
@@ -188,6 +192,7 @@ Rust 客户端参考当前目录里已经调通的 `hello/client-rust` 项目：
 这个项目可以很小，但产品体验仍然应该可信、清楚、可恢复：
 
 - 把浏览器投票从轻量 `main` 验证函数升级到完整 record 驱动的 `new_ticket`、`agree`、`disagree` 流程。
+- 用真实 record/nullifier 策略强制每个合格投票人只能投一次，而不是当前 demo ticket 防重复。
 - 尽可能从链上数据读取提案状态和计票结果，而不是依赖本地 demo 状态。
 - 部署带持久化存储、限流和健康检查的后端 API。
 - 持久化钱包提交交易的状态历史，而不是只保存在浏览器状态里。

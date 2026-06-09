@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { calculateAgreePercent, fallbackProposal, mergeReportTally, nextVoteCounts, type VoteReport } from "./voteFlow";
+import {
+  calculateAgreePercent,
+  canVoteOnProposal,
+  closeProposal,
+  createLocalProposal,
+  fallbackProposal,
+  mergeReportTally,
+  nextVoteCounts,
+  proposalOutcome,
+  proposalStatusLabel,
+  type VoteReport
+} from "./voteFlow";
 
 describe("vote flow helpers", () => {
   it("calculates the public agree percentage", () => {
@@ -16,6 +27,43 @@ describe("vote flow helpers", () => {
       agreeVotes: 12,
       disagreeVotes: 4
     });
+  });
+
+  it("creates local active proposals", () => {
+    const proposal = createLocalProposal({
+      title: "  Add private reviewer elections  ",
+      description: "  Let reviewers vote privately while the final tally remains public.  ",
+      proposer: "aleo1creator"
+    });
+
+    expect(proposal).toEqual(
+      expect.objectContaining({
+        title: "Add private reviewer elections",
+        description: "Let reviewers vote privately while the final tally remains public.",
+        proposer: "aleo1creator",
+        status: "active",
+        agreeVotes: 0,
+        disagreeVotes: 0,
+        ticketsIssued: 0
+      })
+    );
+    expect(proposal.id).toMatch(/^proposal-/);
+  });
+
+  it("labels active and closed proposal outcomes", () => {
+    expect(proposalOutcome({ agreeVotes: 2, disagreeVotes: 2 })).toBe("passing");
+    expect(proposalStatusLabel(fallbackProposal)).toBe("Currently passing");
+    expect(canVoteOnProposal(fallbackProposal)).toBe(true);
+
+    const failed = closeProposal({
+      ...fallbackProposal,
+      agreeVotes: 1,
+      disagreeVotes: 2
+    });
+
+    expect(failed.status).toBe("failed");
+    expect(proposalStatusLabel(failed)).toBe("Failed");
+    expect(canVoteOnProposal(failed)).toBe(false);
   });
 
   it("prefers backend tally data when a report includes it", () => {

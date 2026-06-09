@@ -56,6 +56,65 @@ describe("backend API", () => {
     expect(response.json().ticketCommitment).toMatch(/^ticket-/);
   });
 
+  it("creates and closes a demo proposal", async () => {
+    const server = await testServer();
+
+    const createResponse = await server.inject({
+      method: "POST",
+      url: "/api/proposals",
+      payload: {
+        title: "Choose grant reviewers",
+        description: "Select the next group of privacy grant reviewers for the Aleo community.",
+        proposer: "aleo1creator0000000000000000000000000000000000000000"
+      }
+    });
+
+    expect(createResponse.statusCode).toBe(200);
+    expect(createResponse.json()).toEqual(
+      expect.objectContaining({
+        title: "Choose grant reviewers",
+        agreeVotes: 0,
+        disagreeVotes: 0,
+        ticketsIssued: 0,
+        status: "active"
+      })
+    );
+
+    const closeResponse = await server.inject({
+      method: "POST",
+      url: `/api/proposals/${createResponse.json().id}/close`
+    });
+
+    expect(closeResponse.statusCode).toBe(200);
+    expect(closeResponse.json()).toEqual(
+      expect.objectContaining({
+        id: createResponse.json().id,
+        status: "passed"
+      })
+    );
+    expect(closeResponse.json().closedAt).toEqual(expect.any(String));
+  });
+
+  it("rejects ticket issuance for closed proposals", async () => {
+    const server = await testServer();
+
+    await server.inject({
+      method: "POST",
+      url: "/api/proposals/proposal-privacy-grants/close"
+    });
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/tickets",
+      payload: {
+        proposalId: "proposal-privacy-grants"
+      }
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual(expect.objectContaining({ error: "Proposal is closed" }));
+  });
+
   it("stores a vote report and returns the updated tally", async () => {
     const server = await testServer();
 
