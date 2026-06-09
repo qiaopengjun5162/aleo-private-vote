@@ -160,3 +160,9 @@
 - Switched wallet execution calls to the official `executeTransaction()` API.
 - Kept a custom React 19-compatible provider/button because the official React UI package currently peers React 18.
 - Reframed README limitations as a production roadmap covering record-based voting, chain state, backend persistence, transaction tracking, recovery paths, and E2E tests.
+
+## 2026-06-09 Production Quality Bar
+
+- Updated `CONTRIBUTING.md` to define a production-grade quality bar instead of positioning the project as a Bootcamp MVP.
+- Added project guidance to keep wallet, backend, local demo, and on-chain state honest and user-verifiable.
+- Added review/refactor expectations for correctness, security, maintainability, explicit failure states, and focused tests.

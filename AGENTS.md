@@ -31,6 +31,10 @@
 
 ## Notes
 
+- Treat this as a production-grade product, not a disposable demo or Bootcamp-only submission.
+- Prefer real, verifiable wallet/testnet/backend behavior over presentation-only UI.
+- Keep local demo fallbacks visibly labeled and do not let them masquerade as completed on-chain flows.
+- Review and refactor code for correctness, error handling, maintainability, and security as part of normal delivery.
 - After every code or configuration change, update the relevant docs in the same change set.
 - Record what changed, what broke, and how it was fixed in `PROGRESS.md` before committing.
 - Each completed change set should be committed and pushed to GitHub.
