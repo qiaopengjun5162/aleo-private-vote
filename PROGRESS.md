@@ -86,3 +86,14 @@
 - Verified Next production smoke test at `http://127.0.0.1:3000/` with COOP / COEP headers.
 - Verified `frontend/public/programs/private_vote.aleo` matches `leo/private_vote/build/main.aleo`.
 - Verified `just client-dry-run` and `just rust-dry-run`: both returned `true`.
+
+## 2026-06-09 Testnet Deployment
+
+- Copied the funded testnet `.env` from the local `hello` project into this project root; `.env` is gitignored.
+- Confirmed `private_vote.aleo` was not already deployed before broadcasting.
+- Verified a clean Leo project copy without `.env`: `leo test` passed 3 / 3 tests.
+- Deployed `private_vote.aleo` to Aleo testnet with `leo 4.0.2`, explicit `--consensus-version 14`, and public fee payment.
+- Deployment transaction: `at18jhvcs9gnjwhnqhzgu6sl5mkuyqc9vgt8h5et8sxh98udyg70vpqdyg87a`.
+- Fee transaction: `at1uwugmx0jhup86mhvv0xchw85jfwzyn28c2qhwzp9948l5ungzgrsrpj07y`.
+- Verified the program can be fetched from `https://api.provable.com/v2/testnet/program/private_vote.aleo`.
+- Noted that running Leo commands inside a directory tree containing `.env` can print environment values; use a no-`.env` temp copy or sanitized logs for future verification.

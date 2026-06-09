@@ -114,6 +114,13 @@ MVP 先把测试网执行入口隔离在 CLI 客户端里：
 5. 运行 `just rust-execute-testnet` 或 `just execute-testnet` 广播一次 `main 3u64 2u64` 交互。
 6. 最终提交 Bootcamp 时，补充部署后的 program id、交互交易和 Explorer 截图。
 
+当前测试网部署：
+
+- Program：`private_vote.aleo`
+- 部署交易：`at18jhvcs9gnjwhnqhzgu6sl5mkuyqc9vgt8h5et8sxh98udyg70vpqdyg87a`
+- 手续费交易：`at1uwugmx0jhup86mhvv0xchw85jfwzyn28c2qhwzp9948l5ungzgrsrpj07y`
+- Explorer：`https://testnet.explorer.provable.com/transaction/at18jhvcs9gnjwhnqhzgu6sl5mkuyqc9vgt8h5et8sxh98udyg70vpqdyg87a`
+
 ## Rust 客户端说明
 
 Rust 客户端参考当前目录里已经调通的 `hello/client-rust` 项目：

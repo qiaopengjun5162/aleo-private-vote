@@ -45,6 +45,9 @@
 - Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox and fails with `Operation not permitted`.
 - Start the backend before the frontend for full-stack demos. If the API is unavailable, the frontend intentionally falls back to local demo mode.
 - Before running `just deploy-testnet`, confirm the Leo `program ...` id is unique on testnet; `private_vote.aleo` may need to be renamed for a real deployment.
+- `private_vote.aleo` is now deployed on testnet. Deployment tx: `at18jhvcs9gnjwhnqhzgu6sl5mkuyqc9vgt8h5et8sxh98udyg70vpqdyg87a`.
+- With the current local `leo 4.0.2`, testnet deploy needed explicit `--consensus-version 14`; automatic consensus-version detection failed against `https://api.explorer.provable.com/v1` in this environment.
+- Leo commands run under a directory tree containing `.env` can print loaded env values. Use a temp copy without `.env` or sanitize logs before sharing.
 - `client-rust` dry-run can run without `PRIVATE_KEY`; testnet broadcast must use a funded testnet key from `.env`.
 - Use Vitest instead of Jest for fast TypeScript unit coverage; it keeps tests lightweight while Next handles production builds.
 - Keep comments focused on WHY a design exists. Avoid comments that simply restate the line of code.

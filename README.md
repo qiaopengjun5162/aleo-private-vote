@@ -114,6 +114,13 @@ The MVP keeps testnet execution isolated in CLI clients:
 5. Run `just rust-execute-testnet` or `just execute-testnet` to broadcast one `main 3u64 2u64` interaction.
 6. For final Bootcamp submission, add the deployed program id, interaction transaction, and Explorer screenshot.
 
+Current testnet deployment:
+
+- Program: `private_vote.aleo`
+- Deployment transaction: `at18jhvcs9gnjwhnqhzgu6sl5mkuyqc9vgt8h5et8sxh98udyg70vpqdyg87a`
+- Fee transaction: `at1uwugmx0jhup86mhvv0xchw85jfwzyn28c2qhwzp9948l5ungzgrsrpj07y`
+- Explorer: `https://testnet.explorer.provable.com/transaction/at18jhvcs9gnjwhnqhzgu6sl5mkuyqc9vgt8h5et8sxh98udyg70vpqdyg87a`
+
 ## Rust Client Notes
 
 The Rust client follows the working pattern from the local `hello/client-rust` project:
