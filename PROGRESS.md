@@ -213,3 +213,9 @@
 - PR #2 was merged into `main`, and Vercel deployment `dpl_4ATfWxfTpEbGmUwadMMipYwCynAH` is Ready.
 - `aleo-private-vote.vercel.app` points to `aleo-private-vote-b1ow85hx5-qiaopengjuns-projects.vercel.app`.
 - Verified the production route `/api/testnet/transactions/at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`, which returned accepted `private_vote.aleo/main`.
+
+## 2026-06-09 v0.1.0 Release
+
+- Created GitHub release `v0.1.0 - Aleo Private Vote testnet MVP`.
+- Fixed the README release badge by publishing the first release; Shields now returns `release: v0.1.0`.
+- Release notes include live demo, supported wallets, testnet deployment transaction, interaction transaction, and verification checks.
