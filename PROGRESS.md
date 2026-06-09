@@ -226,3 +226,6 @@
 - Matched the Aleo wallet adapter docs pattern with top-level `Aleo Wallet Adapter` and `Dynamic` choices.
 - Kept external wallet execution on the official adapter path and kept Dynamic disabled unless `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is configured.
 - Reviewed local Bootcamp examples; most use a single adapter provider path, so this project keeps the official adapter logic while adding the docs-style aggregated connection surface.
+- PR #5 was merged into `main`, and Vercel deployment `dpl_5oniWWwnwoTcoud1CoExo43c7jRR` is Ready.
+- `aleo-private-vote.vercel.app` points to `aleo-private-vote-hhb7rzjwt-qiaopengjuns-projects.vercel.app`.
+- Verified production Browser smoke: one `Connect Wallet` button, no separate embedded wallet button, modal shows `Aleo Wallet Adapter` and disabled `Dynamic`, and adapter expansion shows Leo, Shield, Puzzle, and Fox.
