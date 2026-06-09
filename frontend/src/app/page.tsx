@@ -17,12 +17,25 @@ import {
   type Proposal,
   type TicketReceipt,
   type VoteChoice,
-  type VoteReport
+type VoteReport
 } from "@/voteFlow";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8787";
 const programId = "private_vote.aleo";
-const executionFeeMicrocredits = 35_000;
+const executionFunction = "main";
+const executionFee = 35_000;
+const executionFeeLabel = "35,000 public fee units";
+const testnetExplorerBaseUrl = "https://testnet.explorer.provable.com/transaction";
+
+type ExecutionStatus = "idle" | "local-check" | "wallet-approval" | "submitted" | "failed";
+
+const executionStatusLabels: Record<ExecutionStatus, string> = {
+  idle: "Ready after ticket",
+  "local-check": "Running local Aleo check",
+  "wallet-approval": "Waiting for wallet approval",
+  submitted: "Submitted to testnet",
+  failed: "Execution failed"
+};
 
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -53,6 +66,7 @@ export default function Home() {
   const [isIssuing, setIsIssuing] = useState(false);
   const [isProving, setIsProving] = useState(false);
   const [onChainTxId, setOnChainTxId] = useState<string | null>(null);
+  const [executionStatus, setExecutionStatus] = useState<ExecutionStatus>("idle");
 
   useEffect(() => {
     let cancelled = false;
@@ -84,6 +98,11 @@ export default function Home() {
     () => calculateAgreePercent(proposal.agreeVotes, proposal.disagreeVotes),
     [proposal.agreeVotes, proposal.disagreeVotes]
   );
+  const plannedVoteCounts = useMemo(() => nextVoteCounts(proposal, choice), [proposal, choice]);
+  const plannedExecutionInputs = useMemo(
+    () => [`${plannedVoteCounts.agreeVotes}u64`, `${plannedVoteCounts.disagreeVotes}u64`],
+    [plannedVoteCounts]
+  );
 
   async function issueTicket() {
     if (!walletConnected || !publicKey) {
@@ -94,6 +113,7 @@ export default function Home() {
     setIsIssuing(true);
     setReport(null);
     setOnChainTxId(null);
+    setExecutionStatus("idle");
     setMessage(apiStatus === "connected" ? "Requesting a backend ticket..." : "Issuing a local demo ticket...");
 
     try {
@@ -146,31 +166,30 @@ export default function Home() {
 
     setIsProving(true);
     setOnChainTxId(null);
+    setExecutionStatus("local-check");
     setMessage("Running local Aleo check before opening your wallet...");
 
     try {
-      const nextCounts = nextVoteCounts(proposal, choice);
       const program = await readProgram();
       const worker = AleoWorker();
-      const [output] = await worker.localProgramExecution(program, "main", [
-        `${nextCounts.agreeVotes}u64`,
-        `${nextCounts.disagreeVotes}u64`
-      ]);
+      const [output] = await worker.localProgramExecution(program, executionFunction, plannedExecutionInputs);
 
       setProofResult(output);
       if (output !== "true") {
         throw new Error(`Local Aleo execution rejected the vote: ${output}`);
       }
 
+      setExecutionStatus("wallet-approval");
       setMessage("Open your Aleo wallet and approve the testnet execution...");
       const txId = await executeTransaction({
         program: programId,
-        function: "main",
-        inputs: [`${nextCounts.agreeVotes}u64`, `${nextCounts.disagreeVotes}u64`],
-        fee: executionFeeMicrocredits,
+        function: executionFunction,
+        inputs: plannedExecutionInputs,
+        fee: executionFee,
         privateFee: false
       });
       setOnChainTxId(txId);
+      setExecutionStatus("submitted");
 
       if (apiStatus === "connected") {
         const serverReport = await readJson<VoteReport>(
@@ -191,7 +210,7 @@ export default function Home() {
           ...serverReport,
           txId
         });
-        setProposal((current) => mergeReportTally(current, serverReport, nextCounts));
+        setProposal((current) => mergeReportTally(current, serverReport, plannedVoteCounts));
         setMessage("Wallet execution submitted and backend report stored");
       } else {
         setReport({
@@ -205,8 +224,8 @@ export default function Home() {
         });
         setProposal((current) => ({
           ...current,
-          agreeVotes: nextCounts.agreeVotes,
-          disagreeVotes: nextCounts.disagreeVotes
+          agreeVotes: plannedVoteCounts.agreeVotes,
+          disagreeVotes: plannedVoteCounts.disagreeVotes
         }));
         setMessage("Wallet execution submitted; tally updated locally because backend is offline");
       }
@@ -214,6 +233,7 @@ export default function Home() {
       setTicket(null);
     } catch (error) {
       setProofResult(error instanceof Error ? error.message : String(error));
+      setExecutionStatus("failed");
       setMessage(error instanceof Error ? error.message : "Aleo SDK execution failed");
     } finally {
       setIsProving(false);
@@ -312,6 +332,50 @@ export default function Home() {
             </Button>
 
             <p className="mt-4 text-sm font-black text-[#6f3d2f]">{message}</p>
+
+            <div className="mt-6 rounded-md border border-stone-950 bg-white p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase text-[#6f3d2f]">Wallet execution request</p>
+                  <strong className="mt-1 block text-lg">{executionStatusLabels[executionStatus]}</strong>
+                </div>
+                <span className="w-fit rounded-sm border border-stone-950 bg-[#d9ff65] px-2 py-1 text-xs font-black uppercase">
+                  testnet
+                </span>
+              </div>
+              <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+                <div>
+                  <dt className="font-bold text-stone-600">Program</dt>
+                  <dd className="font-mono [overflow-wrap:anywhere]">{programId}</dd>
+                </div>
+                <div>
+                  <dt className="font-bold text-stone-600">Function</dt>
+                  <dd className="font-mono">{executionFunction}</dd>
+                </div>
+                <div>
+                  <dt className="font-bold text-stone-600">Inputs</dt>
+                  <dd className="font-mono [overflow-wrap:anywhere]">{plannedExecutionInputs.join(", ")}</dd>
+                </div>
+                <div>
+                  <dt className="font-bold text-stone-600">Fee</dt>
+                  <dd className="font-mono">{executionFeeLabel}</dd>
+                </div>
+              </dl>
+              <p className="mt-3 text-xs font-bold text-stone-600">
+                The wallet request uses a public fee and asks the connected wallet to execute the deployed verifier.
+              </p>
+              {onChainTxId ? (
+                <a
+                  className="mt-3 inline-flex items-center gap-2 text-sm font-black text-[#6f3d2f] underline"
+                  href={`${testnetExplorerBaseUrl}/${onChainTxId}`}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  View submitted execution
+                  <ExternalLink size={14} />
+                </a>
+              ) : null}
+            </div>
           </CardContent>
         </Card>
 
@@ -348,7 +412,7 @@ export default function Home() {
                   {onChainTxId ? (
                     <a
                       className="mb-3 inline-flex items-center gap-2 text-sm font-black text-[#d9ff65] underline"
-                      href={`https://testnet.explorer.provable.com/transaction/${onChainTxId}`}
+                      href={`${testnetExplorerBaseUrl}/${onChainTxId}`}
                       rel="noreferrer"
                       target="_blank"
                     >

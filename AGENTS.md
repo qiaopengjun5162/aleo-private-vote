@@ -45,6 +45,7 @@
 - `client-ts` and `backend` compile TypeScript before running Node because `tsx` can fail to create IPC sockets in this sandbox.
 - The frontend uses Next.js App Router, React, Tailwind CSS, and local shadcn/ui-style components.
 - Wallet integration uses official `@provablehq/aleo-wallet-adaptor-*` core/adapters with a custom React 19-compatible selector instead of the official React UI package, whose peer range is React 18.
+- Wallet execution UI should show the program, function, inputs, network, public fee, and execution status before asking the user to approve a transaction.
 - Next serves `public/programs/private_vote.aleo`; refresh it from `leo/private_vote/build/main.aleo` after Leo program changes.
 - The browser SDK still runs inside a Web Worker; keep COOP/COEP headers in `next.config.ts` for SharedArrayBuffer support.
 - Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox and fails with `Operation not permitted`.

@@ -93,6 +93,7 @@ The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUB
 - Issue private voting tickets.
 - Cast agree or disagree votes.
 - Submit an Aleo wallet testnet execution for `private_vote.aleo/main`.
+- Preview the wallet execution request before approval, including program, function, inputs, network, and public fee.
 - Show public vote tallies.
 - Generate a local verification report for the demo.
 - Keep testnet execution available through both TypeScript SDK and Rust snarkVM clients.
@@ -120,6 +121,7 @@ The frontend now uses Next.js App Router, React, Tailwind CSS, and local shadcn/
 - Execute `ProgramManager.run()` locally before showing the verification report.
 - Use the official `@provablehq/aleo-wallet-adaptor-*` packages for wallet connection and execution.
 - Render a custom React 19-compatible wallet selector that keeps all supported wallet options visible before extension detection finishes.
+- Show the exact wallet execution request and track local check, wallet approval, submitted, and failed states.
 - Request wallet testnet execution after the local SDK check succeeds.
 - Set `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` in `next.config.ts` for `SharedArrayBuffer` support.
 - Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox.

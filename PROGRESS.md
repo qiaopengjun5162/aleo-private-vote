@@ -176,3 +176,11 @@
 - Added `.vercelignore` after Vercel attempted to upload local dependency and build caches from the monorepo root.
 - Redeployed the frontend from `frontend/` after the root deployment failed to detect Next.js in the workspace shell package.
 - Vercel deployment `dpl_3Ye6CzELo3sNqqHPzBUwLX2w7naC` is Ready and `aleo-private-vote.vercel.app` points to `aleo-private-vote-fifcobpoj-qiaopengjuns-projects.vercel.app`.
+
+## 2026-06-09 Wallet Execute Guide Follow-up
+
+- Attempted to read the official Aleo wallet adapter execute guide, but `docs.aleo.org` returned a Cloudflare challenge in this environment.
+- Cross-checked the installed official `@provablehq/aleo-types` README and wallet adapter sources for `TransactionOptions` and `executeTransaction()` behavior.
+- Added a wallet execution request panel that displays program id, function, inputs, testnet network, public fee, and execution state before and after wallet approval.
+- Tracked execution states as local Aleo check, wallet approval, submitted, and failed so users can see where the flow is blocked.
+- Vercel deployment `dpl_Dz2J1ckT9neUgZacVz4o8afmQWK2` is Ready and `aleo-private-vote.vercel.app` points to `aleo-private-vote-a1oma71js-qiaopengjuns-projects.vercel.app`.
