@@ -77,6 +77,7 @@ just frontend-dev
 
 - 创建和展示投票提案。
 - 连接 Leo、Shield、Puzzle 或 Fox Wallet 后签发票据和投票。
+- 配置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` 后，可启用 Dynamic 嵌入式 Aleo 钱包入口。
 - 发放私密投票票据。
 - 投赞成票或反对票。
 - 通过 Aleo 钱包广播 `private_vote.aleo/main` 测试网 execution。
@@ -84,6 +85,27 @@ just frontend-dev
 - 展示公开计票结果。
 - 生成本地验证报告用于演示。
 - 通过 TypeScript SDK 和 Rust snarkVM 客户端保留测试网执行入口。
+
+## 钱包集成
+
+默认生产路径使用 `ProvableHQ/aleo-dev-toolkit` 里的官方钱包适配器包：
+
+- `@provablehq/aleo-wallet-adaptor-core`
+- `@provablehq/aleo-wallet-adaptor-leo`
+- `@provablehq/aleo-wallet-adaptor-shield`
+- `@provablehq/aleo-wallet-adaptor-puzzle`
+- `@provablehq/aleo-wallet-adaptor-fox`
+- `@provablehq/aleo-wallet-standard`
+
+这条路径连接浏览器钱包扩展，并通过选中 adapter 的 `executeTransaction()` API 请求测试网 execution。
+
+前端也接入了基于 `@dynamic-labs/sdk-react-core` 和 `@dynamic-labs/aleo` 的可选 Dynamic 嵌入式钱包。它默认关闭。只有在 Dynamic dashboard 创建并验证真实环境后，才设置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`：
+
+```bash
+NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @aleo-private-vote/frontend dev
+```
+
+未设置这个变量时，嵌入式钱包 provider 和按钮都不会渲染。因为它是 `NEXT_PUBLIC_` 变量，生产部署必须在 `next build` 前设置，比如先在 Vercel Project Settings 里配置再重新部署。当前投票 execution 仍然走外部 Aleo 钱包 adapter；Dynamic 嵌入式钱包的交易证明和广播路径，要等真实 Dynamic 环境和测试网账号验证后再接入。
 
 ## 后端 API
 
@@ -108,6 +130,7 @@ just frontend-dev
 - 用 `ProgramManager.run()` 做本地执行，再展示验证报告。
 - 使用官方 `@provablehq/aleo-wallet-adaptor-*` 包接入钱包连接和 execution。
 - 使用自定义 React 19 兼容钱包选择器，在扩展探测完成前也稳定展示所有支持的钱包入口。
+- 仅在配置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` 后加载 Dynamic 嵌入式钱包 UI。
 - 展示准确的钱包 execution request，并跟踪本地检查、钱包批准、已提交和失败状态。
 - 本地 SDK 检查通过后，请求钱包广播测试网 execution。
 - 在 `next.config.ts` 配置 COOP / COEP 头，为 `SharedArrayBuffer` 提供支持。

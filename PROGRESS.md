@@ -184,3 +184,12 @@
 - Added a wallet execution request panel that displays program id, function, inputs, testnet network, public fee, and execution state before and after wallet approval.
 - Tracked execution states as local Aleo check, wallet approval, submitted, and failed so users can see where the flow is blocked.
 - Vercel deployment `dpl_Dz2J1ckT9neUgZacVz4o8afmQWK2` is Ready and `aleo-private-vote.vercel.app` points to `aleo-private-vote-a1oma71js-qiaopengjuns-projects.vercel.app`.
+
+## 2026-06-09 Optional Embedded Wallet Support
+
+- Added optional Dynamic embedded Aleo wallet provider and button components.
+- Gated the embedded wallet UI behind `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` so production does not show a non-functional wallet path by default.
+- Kept the current vote execution path on the official external wallet adapter `executeTransaction()` flow.
+- Documented that `ProvableHQ/aleo-dev-toolkit` is the source repository for the official Aleo wallet adapter packages used by the frontend.
+- Documented the future requirement to validate Dynamic embedded wallet proving and broadcasting with a real Dynamic environment before wiring it into voting execution.
+- Vercel deployment `dpl_2ar8k7YFGZXWRhrAyiMmoyvWwGff` is Ready and `aleo-private-vote.vercel.app` points to `aleo-private-vote-7053dss3l-qiaopengjuns-projects.vercel.app`.

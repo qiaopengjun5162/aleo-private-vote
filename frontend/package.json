@@ -11,6 +11,8 @@
     "preview": "next start -H 127.0.0.1"
   },
   "dependencies": {
+    "@dynamic-labs/aleo": "^4.88.1",
+    "@dynamic-labs/sdk-react-core": "^4.88.1",
     "@provablehq/aleo-types": "0.3.0-alpha.4",
     "@provablehq/aleo-wallet-adaptor-core": "0.3.0-alpha.4",
     "@provablehq/aleo-wallet-adaptor-fox": "0.3.0-alpha.4",

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AleoWalletProvider } from "@/wallet/AleoWalletProvider";
+import { DynamicAleoProvider } from "@/wallet/DynamicAleoProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,7 +12,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
-        <AleoWalletProvider>{children}</AleoWalletProvider>
+        <DynamicAleoProvider>
+          <AleoWalletProvider>{children}</AleoWalletProvider>
+        </DynamicAleoProvider>
       </body>
     </html>
   );

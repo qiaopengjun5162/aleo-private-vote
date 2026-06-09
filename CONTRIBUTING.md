@@ -6,6 +6,7 @@ Thanks for helping improve Aleo Private Vote. This project should be treated as 
 
 - Prefer working, user-verifiable product behavior over presentation-only changes.
 - Keep wallet, testnet, backend, and UI state honest; never make a local demo path look like a completed on-chain flow.
+- Keep optional wallet providers disabled unless they have real environment configuration and a verified execution path.
 - Review code for correctness, error handling, security, and maintainability before committing.
 - Refactor when it removes real risk or complexity, but avoid broad rewrites that do not improve the product.
 - Add focused tests for behavior changes, and expand coverage when touching shared flows.

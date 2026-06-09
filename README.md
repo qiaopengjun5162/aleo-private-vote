@@ -90,6 +90,7 @@ The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUB
 
 - Create and display voting proposals.
 - Connect Leo, Shield, Puzzle, or Fox Wallet before issuing a ticket or casting a vote.
+- Optionally enable a Dynamic embedded Aleo wallet entry when `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is configured.
 - Issue private voting tickets.
 - Cast agree or disagree votes.
 - Submit an Aleo wallet testnet execution for `private_vote.aleo/main`.
@@ -97,6 +98,27 @@ The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUB
 - Show public vote tallies.
 - Generate a local verification report for the demo.
 - Keep testnet execution available through both TypeScript SDK and Rust snarkVM clients.
+
+## Wallet Integration
+
+The default production path uses the official wallet adapter packages from `ProvableHQ/aleo-dev-toolkit`:
+
+- `@provablehq/aleo-wallet-adaptor-core`
+- `@provablehq/aleo-wallet-adaptor-leo`
+- `@provablehq/aleo-wallet-adaptor-shield`
+- `@provablehq/aleo-wallet-adaptor-puzzle`
+- `@provablehq/aleo-wallet-adaptor-fox`
+- `@provablehq/aleo-wallet-standard`
+
+This path connects browser wallet extensions and uses the selected adapter's `executeTransaction()` API for the testnet execution request.
+
+The frontend also includes optional Dynamic embedded wallet support through `@dynamic-labs/sdk-react-core` and `@dynamic-labs/aleo`. It is disabled by default. Set `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` only after creating and validating a real Dynamic environment in the Dynamic dashboard:
+
+```bash
+NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @aleo-private-vote/frontend dev
+```
+
+When this variable is missing, the embedded wallet provider and button are not rendered. Because it is a `NEXT_PUBLIC_` variable, production deployments must set it before `next build` runs, such as through Vercel Project Settings before redeploying. Current vote execution still uses the external Aleo wallet adapter flow; embedded wallet transaction proving should be wired only after the Dynamic environment and broadcast path are verified with a real testnet account.
 
 ## Backend API
 
@@ -121,6 +143,7 @@ The frontend now uses Next.js App Router, React, Tailwind CSS, and local shadcn/
 - Execute `ProgramManager.run()` locally before showing the verification report.
 - Use the official `@provablehq/aleo-wallet-adaptor-*` packages for wallet connection and execution.
 - Render a custom React 19-compatible wallet selector that keeps all supported wallet options visible before extension detection finishes.
+- Load Dynamic embedded wallet UI only when `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is configured.
 - Show the exact wallet execution request and track local check, wallet approval, submitted, and failed states.
 - Request wallet testnet execution after the local SDK check succeeds.
 - Set `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` in `next.config.ts` for `SharedArrayBuffer` support.
@@ -170,6 +193,7 @@ This project is intentionally kept small, but it should still behave like a trus
 ## References
 
 - https://github.com/ProvableHQ/leo-examples/tree/main/vote
+- https://github.com/ProvableHQ/aleo-dev-toolkit
 - https://docs.aleo.org/build/sdk/overview
 - https://github.com/provablehq/sdk/tree/mainnet/sdk
 
