@@ -51,6 +51,7 @@
 - Dynamic embedded wallet support is optional and gated by `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`; the unified wallet modal may show it as disabled, but do not document it as enabled unless a real Dynamic environment is configured.
 - Current browser voting execution still uses the external wallet adapter `executeTransaction()` path. Do not claim Dynamic embedded wallet execution is wired until `proveTransaction()` is validated with a real environment and testnet account.
 - Wallet execution UI should show the program, function, inputs, network, public fee, and execution status before asking the user to approve a transaction.
+- Wallet ownership proof uses the selected official adapter's `signMessage()` API and local `Signature.verify(Address, message)` before showing the proof as verified.
 - Treat the value returned by `executeTransaction()` as a wallet execution id first; resolve the on-chain `transactionId` through `transactionStatus()` before using Explorer or testnet API checks.
 - External wallet connections request `WalletDecryptPermission.OnChainHistory` for `private_vote.aleo`; use `requestTransactionHistory(programId)` for wallet-scoped history and keep explorer/API checks as the on-chain acceptance signal.
 - Wallet transaction status checks use the frontend route `/api/testnet/transactions/[txId]`, which proxies `https://api.provable.com/v2/testnet/transaction/{txId}` by default and can be pointed elsewhere with `ALEO_TESTNET_API_URL`.

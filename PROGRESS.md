@@ -250,3 +250,11 @@
 - `aleo-private-vote.vercel.app` points to `aleo-private-vote-c72yw5nqv-qiaopengjuns-projects.vercel.app`.
 - Verified the production JavaScript bundle includes the `Wallet execution status`, `Wallet transaction history`, temporary execution id, and `transactionStatus` resolution paths.
 - Verified the production transaction status route still returns accepted `private_vote.aleo/main` for `at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`.
+
+## 2026-06-09 Wallet Sign Message Proof
+
+- Added official wallet adapter `signMessage()` support to the frontend wallet context.
+- Added a domain-bound wallet ownership challenge with address, program id, nonce, and issue time.
+- Added local signature verification with `Signature.fromBytesLe()` and `Signature.verify(Address, message)` before displaying the proof as verified.
+- Added a wallet ownership proof panel that shows signing status, verification result, challenge transcript, and signature hex.
+- Added Vitest coverage for challenge formatting, UTF-8 encoding, and signature hex serialization.

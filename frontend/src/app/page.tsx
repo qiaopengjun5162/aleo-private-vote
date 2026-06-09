@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ExternalLink, Fingerprint, History, RefreshCw, ShieldCheck, Ticket, Vote } from "lucide-react";
+import { CheckCircle2, ExternalLink, Fingerprint, History, KeyRound, RefreshCw, ShieldCheck, Ticket, Vote } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,12 @@ import {
 } from "@/transactionStatus";
 import { AleoWalletButton, useAleoWallet } from "@/wallet/AleoWalletProvider";
 import { type WalletTransactionHistoryEntry } from "@/walletTransactionHistory";
+import {
+  bytesToHex,
+  createWalletSignatureChallenge,
+  encodeWalletSignatureChallenge,
+  verifyWalletSignatureProof
+} from "@/walletSignature";
 import { AleoWorker } from "@/workers/AleoWorker";
 import {
   calculateAgreePercent,
@@ -42,6 +48,14 @@ const walletStatusMaxChecks = 24;
 
 type ExecutionStatus = "idle" | "local-check" | "wallet-approval" | "submitted" | "failed";
 type WalletHistoryStatus = "idle" | "loading" | "loaded" | "failed";
+type WalletSignatureStatus = "idle" | "signing" | "verified" | "failed";
+
+type WalletSignatureProof = {
+  challenge: string;
+  signatureHex: string;
+  signedAt: string;
+  verified: boolean;
+};
 
 const executionStatusLabels: Record<ExecutionStatus, string> = {
   idle: "Ready after ticket",
@@ -74,6 +88,7 @@ export default function Home() {
     executeTransaction,
     publicKey,
     requestTransactionHistory,
+    signMessage,
     transactionStatus: checkWalletTransactionStatus
   } = useAleoWallet();
   const [proposal, setProposal] = useState<Proposal>(fallbackProposal);
@@ -94,6 +109,9 @@ export default function Home() {
   const [walletHistory, setWalletHistory] = useState<WalletTransactionHistoryEntry[]>([]);
   const [walletHistoryStatus, setWalletHistoryStatus] = useState<WalletHistoryStatus>("idle");
   const [walletHistoryMessage, setWalletHistoryMessage] = useState("Connect a wallet to load private_vote.aleo history.");
+  const [walletSignatureStatus, setWalletSignatureStatus] = useState<WalletSignatureStatus>("idle");
+  const [walletSignatureProof, setWalletSignatureProof] = useState<WalletSignatureProof | null>(null);
+  const [walletSignatureMessage, setWalletSignatureMessage] = useState("Connect a wallet to sign an ownership challenge.");
 
   useEffect(() => {
     let cancelled = false;
@@ -262,12 +280,18 @@ export default function Home() {
       setWalletHistory([]);
       setWalletHistoryStatus("idle");
       setWalletHistoryMessage("Wallet connected. Load private_vote.aleo history from your wallet.");
+      setWalletSignatureStatus("idle");
+      setWalletSignatureProof(null);
+      setWalletSignatureMessage("Sign a challenge to prove control of the connected Aleo address.");
       return;
     }
 
     setWalletHistory([]);
     setWalletHistoryStatus("idle");
     setWalletHistoryMessage("Connect a wallet to load private_vote.aleo history.");
+    setWalletSignatureStatus("idle");
+    setWalletSignatureProof(null);
+    setWalletSignatureMessage("Connect a wallet to sign an ownership challenge.");
   }, [walletConnected, publicKey]);
 
   const agreePercent = useMemo(
@@ -302,6 +326,49 @@ export default function Home() {
     } catch (error) {
       setWalletHistoryStatus("failed");
       setWalletHistoryMessage(error instanceof Error ? error.message : "Unable to load wallet transaction history.");
+    }
+  }
+
+  async function proveWalletOwnership() {
+    if (!walletConnected || !publicKey) {
+      setWalletSignatureMessage("Connect an Aleo wallet before signing an ownership challenge.");
+      return;
+    }
+
+    const signedAt = new Date().toISOString();
+    const challenge = createWalletSignatureChallenge({
+      address: publicKey,
+      issuedAt: signedAt,
+      nonce: crypto.randomUUID(),
+      origin: window.location.origin,
+      programId
+    });
+    const challengeBytes = encodeWalletSignatureChallenge(challenge);
+
+    setWalletSignatureStatus("signing");
+    setWalletSignatureProof(null);
+    setWalletSignatureMessage("Review and sign the ownership challenge in your wallet.");
+
+    try {
+      const signatureBytes = new Uint8Array(await signMessage(challengeBytes));
+      setWalletSignatureMessage("Wallet signature received. Verifying it against the connected address...");
+
+      const verified = await verifyWalletSignatureProof(publicKey, challengeBytes, signatureBytes);
+      setWalletSignatureProof({
+        challenge,
+        signatureHex: bytesToHex(signatureBytes),
+        signedAt,
+        verified
+      });
+      setWalletSignatureStatus(verified ? "verified" : "failed");
+      setWalletSignatureMessage(
+        verified
+          ? "Wallet signature verified against the connected Aleo address."
+          : "Wallet signature did not verify against the connected Aleo address."
+      );
+    } catch (error) {
+      setWalletSignatureStatus("failed");
+      setWalletSignatureMessage(error instanceof Error ? error.message : "Unable to sign wallet challenge.");
     }
   }
 
@@ -720,6 +787,57 @@ export default function Home() {
                   <strong className="mt-2 block text-3xl">{value}</strong>
                 </div>
               ))}
+            </div>
+
+            <div className="mb-6 rounded-md border border-stone-950 bg-[#f4e4cf] p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="inline-flex items-center gap-2 text-xs font-black uppercase text-[#6f3d2f]">
+                    <KeyRound size={14} />
+                    Wallet ownership proof
+                  </p>
+                  <strong className="mt-1 block text-sm">
+                    {walletSignatureStatus === "signing"
+                      ? "Waiting for signature"
+                      : walletSignatureStatus === "verified"
+                        ? "Signature verified"
+                        : walletSignatureStatus === "failed"
+                          ? "Signature failed"
+                          : "Ready to sign"}
+                  </strong>
+                </div>
+                <Button
+                  className="w-fit"
+                  disabled={!walletConnected || walletSignatureStatus === "signing"}
+                  onClick={() => void proveWalletOwnership()}
+                  type="button"
+                  variant="outline"
+                >
+                  <KeyRound size={14} />
+                  {walletSignatureStatus === "signing" ? "Signing" : "Sign challenge"}
+                </Button>
+              </div>
+              <p className="mt-2 text-xs font-bold text-stone-600">{walletSignatureMessage}</p>
+              {walletSignatureProof ? (
+                <div className="mt-3 grid gap-3 text-xs">
+                  <div>
+                    <span className="font-bold text-stone-600">Verified</span>
+                    <code className="mt-1 block rounded-sm border border-stone-950 bg-white p-2 font-mono text-stone-800">
+                      {walletSignatureProof.verified ? "true" : "false"} at {walletSignatureProof.signedAt}
+                    </code>
+                  </div>
+                  <div>
+                    <span className="font-bold text-stone-600">Challenge</span>
+                    <pre className="mt-1 max-h-36 overflow-auto rounded-sm border border-stone-950 bg-white p-2 font-mono text-stone-800 [white-space:pre-wrap]">{walletSignatureProof.challenge}</pre>
+                  </div>
+                  <div>
+                    <span className="font-bold text-stone-600">Signature</span>
+                    <code className="mt-1 block rounded-sm border border-stone-950 bg-white p-2 font-mono text-stone-800 [overflow-wrap:anywhere]">
+                      {walletSignatureProof.signatureHex}
+                    </code>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="min-h-44 rounded-md bg-stone-950 p-5 text-white">

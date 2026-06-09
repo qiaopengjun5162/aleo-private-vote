@@ -20,13 +20,14 @@ Aleo Private Vote 是一个基于 Aleo 的隐私投票 DApp，用于演示私密
 DApp 的交互流程是：
 
 1. 用户先在前端连接支持的 Aleo 钱包。
-2. 前端从后端加载提案。
-3. 用户请求一张私密票据，后端签发 demo ticket commitment，并增加 `ticketsIssued`。
-4. 用户选择 `Agree` 或 `Disagree`。
-5. 前端把下一轮公开计票传给 Aleo SDK Web Worker，执行 `private_vote.aleo/main`。
-6. 本地 SDK 执行返回 `true` 后，前端打开已连接的钱包，请求广播一次 `private_vote.aleo/main` 测试网 execution。
-7. 钱包返回交易 id 后，前端展示 Explorer 链接，并把 verification report 发送给后端。
-8. 后端保存 report，并返回更新后的公开计票。
+2. 用户可以签名一个 ownership challenge，前端会用已连接的 Aleo 地址本地验证签名。
+3. 前端从后端加载提案。
+4. 用户请求一张私密票据，后端签发 demo ticket commitment，并增加 `ticketsIssued`。
+5. 用户选择 `Agree` 或 `Disagree`。
+6. 前端把下一轮公开计票传给 Aleo SDK Web Worker，执行 `private_vote.aleo/main`。
+7. 本地 SDK 执行返回 `true` 后，前端打开已连接的钱包，请求广播一次 `private_vote.aleo/main` 测试网 execution。
+8. 钱包返回交易 id 后，前端展示 Explorer 链接，并把 verification report 发送给后端。
+9. 后端保存 report，并返回更新后的公开计票。
 
 完整上链流程里，`propose`、`new_ticket`、`agree`、`disagree` 用于建模 record 驱动的隐私投票。轻量的 `main` 验证函数让本地演示、CI 和 SDK 检查保持快速，同时保留 Aleo 隐私执行的核心路径。
 
@@ -78,6 +79,7 @@ just frontend-dev
 - 创建和展示投票提案。
 - 连接 Leo、Shield、Puzzle 或 Fox Wallet 后签发票据和投票。
 - 配置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` 后，可启用 Dynamic 嵌入式 Aleo 钱包入口。
+- 通过 `signMessage()` 签名 ownership challenge，并用当前连接地址本地验签。
 - 发放私密投票票据。
 - 投赞成票或反对票。
 - 通过 Aleo 钱包广播 `private_vote.aleo/main` 测试网 execution。
@@ -99,7 +101,7 @@ just frontend-dev
 - `@provablehq/aleo-wallet-adaptor-fox`
 - `@provablehq/aleo-wallet-standard`
 
-这条路径连接浏览器钱包扩展，并通过选中 adapter 的 `executeTransaction()` API 请求测试网 execution。由于 wallet adapter 可能先返回 temporary execution id，前端会调用 `transactionStatus(walletExecutionId)` 解析真正的 on-chain `transactionId`，再打开 Explorer 链接或检查 testnet accepted 状态。连接钱包时会为 `private_vote.aleo` 请求 `WalletDecryptPermission.OnChainHistory`，这样前端可以调用 `requestTransactionHistory(programId)`，在 explorer 状态检查旁边展示钱包返回的 program-scoped 交易历史。
+这条路径连接浏览器钱包扩展，通过选中 adapter 的 `signMessage()` API 做钱包 ownership proof，并通过 `executeTransaction()` API 请求测试网 execution。ownership proof 会签名一个绑定当前域名、program 和地址的 challenge，并用 `Signature.verify(Address, message)` 在前端本地验签。由于 wallet adapter 可能先返回 temporary execution id，前端会调用 `transactionStatus(walletExecutionId)` 解析真正的 on-chain `transactionId`，再打开 Explorer 链接或检查 testnet accepted 状态。连接钱包时会为 `private_vote.aleo` 请求 `WalletDecryptPermission.OnChainHistory`，这样前端可以调用 `requestTransactionHistory(programId)`，在 explorer 状态检查旁边展示钱包返回的 program-scoped 交易历史。
 
 前端也接入了基于 `@dynamic-labs/sdk-react-core` 和 `@dynamic-labs/aleo` 的可选 Dynamic 嵌入式钱包。它默认关闭。只有在 Dynamic dashboard 创建并验证真实环境后，才设置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`：
 
@@ -140,6 +142,7 @@ NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @al
 - 使用自定义 React 19 兼容钱包选择器，在扩展探测完成前也稳定展示所有支持的钱包入口。
 - 使用一个 `Connect Wallet` 弹窗统一展示外部 Aleo wallet adapter 和 Dynamic embedded wallet 路径。
 - 未配置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` 时，Dynamic 选项保持禁用。
+- 使用 `signMessage()` 做钱包 ownership proof，并在显示 verified 前本地验签。
 - 展示准确的钱包 execution request，并跟踪本地检查、钱包批准、已提交和失败状态。
 - 本地 SDK 检查通过后，请求钱包广播测试网 execution。
 - 通过 `transactionStatus()` 解析钱包返回的 temporary execution id，再把它作为 on-chain transaction id 使用。
@@ -186,7 +189,7 @@ Rust 客户端参考当前目录里已经调通的 `hello/client-rust` 项目：
 - 尽可能从链上数据读取提案状态和计票结果，而不是依赖本地 demo 状态。
 - 部署带持久化存储、限流和健康检查的后端 API。
 - 持久化钱包提交交易的状态历史，而不是只保存在浏览器状态里。
-- 为用户拒签、手续费不足、广播失败、钱包扩展不可用等情况提供清楚的恢复路径。
+- 继续完善用户拒签、手续费不足、广播失败、钱包扩展不可用等情况的恢复路径。
 - 增加端到端测试，覆盖连接钱包、签发票据、批准 execution 和 Explorer 链接展示。
 
 ## 许可证
