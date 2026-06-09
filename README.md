@@ -7,21 +7,52 @@
 ![Rust](https://img.shields.io/badge/Rust-1.96.0-orange?logo=rust)
 ![Node.js](https://img.shields.io/badge/Node.js-24.15.0-green?logo=node.js)
 ![Next.js](https://img.shields.io/badge/Next.js-16.2.7-black?logo=next.js)
-![License](https://img.shields.io/badge/License-MIT-blue)
+![GitHub license](https://img.shields.io/github/license/qiaopengjun5162/aleo-private-vote)
+![GitHub last commit](https://img.shields.io/github/last-commit/qiaopengjun5162/aleo-private-vote)
 
-Live demo: https://aleo-private-vote.vercel.app
+Live demo: [https://aleo-private-vote.vercel.app](https://aleo-private-vote.vercel.app)
 
 ## Chinese Documentation
 
 中文文档请参阅 [README_zh.md](README_zh.md)。
 
-Aleo Private Vote is a privacy-preserving voting DApp for private ticket-based voting on Aleo.
+## Overview
 
-The project starts from the official `ProvableHQ/leo-examples` voting example and turns it into a small full-stack DApp with a Leo program, a TypeScript SDK client, a backend API, and a frontend voting dashboard.
+`Aleo Private Vote` is a privacy-preserving voting DApp for private ticket-based voting on Aleo. It starts from the official `ProvableHQ/leo-examples` voting example and turns it into a small full-stack product surface with a Leo program, TypeScript SDK client, Rust snarkVM client, backend API, and frontend voting dashboard.
+
+The live application is intentionally honest about its current boundary: browser voting runs a local Aleo SDK check, then asks a connected Aleo wallet to submit a testnet execution for the deployed verifier program. The full record-based private voting flow is modeled in Leo and tracked in the production roadmap.
 
 ## Why This Project
 
 Voting is a natural privacy use case: voters should be able to cast a choice without exposing how they voted, while the final tally should remain publicly verifiable. Aleo's local private execution and public verification model fits this workflow well.
+
+### Features
+
+- Privacy-oriented voting model with proposal, ticket, and vote records in Leo.
+- Local Aleo SDK execution in a browser Web Worker before wallet approval.
+- Testnet wallet execution for `private_vote.aleo/main`.
+- Official Aleo wallet adapter support for Leo, Shield, Puzzle, and Fox Wallet.
+- Optional Dynamic embedded Aleo wallet entry, gated by `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`.
+- Backend API for demo proposals, private ticket commitments, and verification reports.
+- TypeScript and Rust clients for local dry-runs and explicit testnet interactions.
+- Public testnet deployment evidence and Explorer links.
+- Contributor recognition through the all-contributors spec.
+
+### Quick Start
+
+Install dependencies, compile the Leo program, and run the frontend:
+
+```bash
+pnpm install
+just leo-test
+just frontend-dev
+```
+
+For the full local flow, start the backend in a second terminal before opening the frontend:
+
+```bash
+just backend-dev
+```
 
 ## Voting Logic
 
@@ -43,7 +74,7 @@ The DApp flow is:
 
 In the full on-chain flow, `propose`, `new_ticket`, `agree`, and `disagree` model private record-based voting. The lightweight `main` verifier keeps local demos, CI, and SDK checks fast while still exercising the Aleo execution path.
 
-## Architecture
+## Project Structure
 
 ```text
 aleo-private-vote/
@@ -55,20 +86,58 @@ aleo-private-vote/
   screenshots/       # Demo and testnet screenshots
 ```
 
-## Commands
+## Installation
+
+Install dependencies from the repository root:
 
 ```bash
 pnpm install
+```
+
+Compile the Leo program before running SDK clients:
+
+```bash
 just leo-test
-just backend-dev
+```
+
+## Usage
+
+Run the frontend:
+
+```bash
 just frontend-dev
+```
+
+Run the backend API:
+
+```bash
+just backend-dev
+```
+
+Run local SDK checks:
+
+```bash
 just client-dry-run
 just rust-dry-run
-just rust-execute-testnet
-pnpm --filter @aleo-private-vote/backend test
-pnpm --filter @aleo-private-vote/frontend test
+```
+
+Run testnet actions with a funded local `PRIVATE_KEY`:
+
+```bash
 just deploy-testnet
 just execute-testnet
+just rust-execute-testnet
+```
+
+Useful development commands:
+
+```bash
+just leo-test
+just client-dry-run
+just rust-dry-run
+pnpm --filter @aleo-private-vote/backend test
+pnpm --filter @aleo-private-vote/frontend test
+pnpm --filter @aleo-private-vote/frontend build
 ```
 
 Run `just leo-test` before `just client-dry-run` so `leo/private_vote/build/main.aleo` exists for the SDK.
@@ -85,6 +154,14 @@ just frontend-dev
 ```
 
 The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUBLIC_API_URL` when needed.
+
+## Requirements
+
+- **Leo**: 4.0.2.
+- **Node.js**: 24.15.0 or compatible with Next.js 16.
+- **pnpm**: required for workspace dependency management.
+- **Rust**: 1.96.0 or compatible stable toolchain for the Rust client.
+- **Aleo testnet wallet**: required only for deployment and wallet-submitted execution.
 
 ## Project Scope
 

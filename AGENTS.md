@@ -36,6 +36,8 @@
 - Keep local demo fallbacks visibly labeled and do not let them masquerade as completed on-chain flows.
 - Review and refactor code for correctness, error handling, maintainability, and security as part of normal delivery.
 - After every code or configuration change, update the relevant docs in the same change set.
+- Keep `README.md` structured like an independent open-source project: overview, features, quick start, installation, usage, requirements, project structure, contributing, contributors, and license.
+- Preserve the all-contributors badge/list markers in `README.md` and keep `.all-contributorsrc` in sync with the Contributors section.
 - Record what changed, what broke, and how it was fixed in `PROGRESS.md` before committing.
 - Each completed change set should be committed and pushed to GitHub.
 - When GitHub network access fails, retry with the local proxy `127.0.0.1:7890`; sandboxed commands may not reach it, so use approved escalation for GitHub checks when needed.
