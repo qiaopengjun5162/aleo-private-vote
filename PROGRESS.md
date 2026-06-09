@@ -229,3 +229,10 @@
 - PR #5 was merged into `main`, and Vercel deployment `dpl_5oniWWwnwoTcoud1CoExo43c7jRR` is Ready.
 - `aleo-private-vote.vercel.app` points to `aleo-private-vote-hhb7rzjwt-qiaopengjuns-projects.vercel.app`.
 - Verified production Browser smoke: one `Connect Wallet` button, no separate embedded wallet button, modal shows `Aleo Wallet Adapter` and disabled `Dynamic`, and adapter expansion shows Leo, Shield, Puzzle, and Fox.
+
+## 2026-06-09 Wallet Transaction History
+
+- Reviewed the official Aleo wallet adapter tx-history guide and the installed `@provablehq/aleo-wallet-adaptor-core` alpha.4 types.
+- Switched external wallet connection permission to `WalletDecryptPermission.OnChainHistory` for `private_vote.aleo`.
+- Added `requestTransactionHistory(programId)` support to the wallet context and a frontend transaction-history panel with explorer links.
+- Added unit coverage for wallet transaction-history normalization and deduplication.

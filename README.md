@@ -33,6 +33,7 @@ Voting is a natural privacy use case: voters should be able to cast a choice wit
 - Local Aleo SDK execution in a browser Web Worker before wallet approval.
 - Testnet wallet execution for `private_vote.aleo/main`.
 - Same-origin testnet transaction status checks after wallet submission.
+- Wallet-scoped transaction history for `private_vote.aleo` through the Aleo wallet adapter.
 - Official Aleo wallet adapter support for Leo, Shield, Puzzle, and Fox Wallet.
 - Optional Dynamic embedded Aleo wallet entry, gated by `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`.
 - Backend API for demo proposals, private ticket commitments, and verification reports.
@@ -175,6 +176,7 @@ The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUB
 - Submit an Aleo wallet testnet execution for `private_vote.aleo/main`.
 - Preview the wallet execution request before approval, including program, function, inputs, network, and public fee.
 - Track submitted wallet transactions as checking, pending, accepted, or unavailable.
+- Load the connected wallet's `private_vote.aleo` transaction history after the wallet grants on-chain history permission.
 - Show public vote tallies.
 - Generate a local verification report for the demo.
 - Keep testnet execution available through both TypeScript SDK and Rust snarkVM clients.
@@ -190,7 +192,7 @@ The default production path uses the official wallet adapter packages from `Prov
 - `@provablehq/aleo-wallet-adaptor-fox`
 - `@provablehq/aleo-wallet-standard`
 
-This path connects browser wallet extensions and uses the selected adapter's `executeTransaction()` API for the testnet execution request.
+This path connects browser wallet extensions and uses the selected adapter's `executeTransaction()` API for the testnet execution request. The connection asks for `WalletDecryptPermission.OnChainHistory` for `private_vote.aleo` so the app can call `requestTransactionHistory(programId)` and show wallet-scoped transaction history beside the explorer status check.
 
 The frontend also includes optional Dynamic embedded wallet support through `@dynamic-labs/sdk-react-core` and `@dynamic-labs/aleo`. It is disabled by default. Set `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` only after creating and validating a real Dynamic environment in the Dynamic dashboard:
 
@@ -233,6 +235,7 @@ The frontend now uses Next.js App Router, React, Tailwind CSS, and local shadcn/
 - Keep the Dynamic option disabled unless `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is configured.
 - Show the exact wallet execution request and track local check, wallet approval, submitted, and failed states.
 - Request wallet testnet execution after the local SDK check succeeds.
+- Request wallet on-chain history permission and expose a manual `private_vote.aleo` transaction history refresh through `requestTransactionHistory()`.
 - Poll the same-origin `/api/testnet/transactions/:txId` route after wallet submission so the browser does not depend on direct cross-origin access to the Provable API.
 - Set `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` in `next.config.ts` for `SharedArrayBuffer` support.
 - Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox.

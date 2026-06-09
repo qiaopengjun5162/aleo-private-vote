@@ -51,6 +51,7 @@
 - Dynamic embedded wallet support is optional and gated by `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`; the unified wallet modal may show it as disabled, but do not document it as enabled unless a real Dynamic environment is configured.
 - Current browser voting execution still uses the external wallet adapter `executeTransaction()` path. Do not claim Dynamic embedded wallet execution is wired until `proveTransaction()` is validated with a real environment and testnet account.
 - Wallet execution UI should show the program, function, inputs, network, public fee, and execution status before asking the user to approve a transaction.
+- External wallet connections request `WalletDecryptPermission.OnChainHistory` for `private_vote.aleo`; use `requestTransactionHistory(programId)` for wallet-scoped history and keep explorer/API checks as the on-chain acceptance signal.
 - Wallet transaction status checks use the frontend route `/api/testnet/transactions/[txId]`, which proxies `https://api.provable.com/v2/testnet/transaction/{txId}` by default and can be pointed elsewhere with `ALEO_TESTNET_API_URL`.
 - Next serves `public/programs/private_vote.aleo`; refresh it from `leo/private_vote/build/main.aleo` after Leo program changes.
 - The browser SDK still runs inside a Web Worker; keep COOP/COEP headers in `next.config.ts` for SharedArrayBuffer support.

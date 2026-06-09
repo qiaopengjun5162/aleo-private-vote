@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ExternalLink, Fingerprint, ShieldCheck, Ticket, Vote } from "lucide-react";
+import { CheckCircle2, ExternalLink, Fingerprint, History, RefreshCw, ShieldCheck, Ticket, Vote } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { transactionStatusLabels, type TestnetTransactionStatusResponse } from "@/transactionStatus";
 import { AleoWalletButton, useAleoWallet } from "@/wallet/AleoWalletProvider";
+import { type WalletTransactionHistoryEntry } from "@/walletTransactionHistory";
 import { AleoWorker } from "@/workers/AleoWorker";
 import {
   calculateAgreePercent,
@@ -31,6 +32,7 @@ const transactionStatusPollIntervalMs = 5_000;
 const transactionStatusMaxChecks = 24;
 
 type ExecutionStatus = "idle" | "local-check" | "wallet-approval" | "submitted" | "failed";
+type WalletHistoryStatus = "idle" | "loading" | "loaded" | "failed";
 
 const executionStatusLabels: Record<ExecutionStatus, string> = {
   idle: "Ready after ticket",
@@ -58,7 +60,12 @@ async function readProgram() {
 }
 
 export default function Home() {
-  const { connected: walletConnected, executeTransaction, publicKey } = useAleoWallet();
+  const {
+    connected: walletConnected,
+    executeTransaction,
+    publicKey,
+    requestTransactionHistory
+  } = useAleoWallet();
   const [proposal, setProposal] = useState<Proposal>(fallbackProposal);
   const [ticket, setTicket] = useState<TicketReceipt | null>(null);
   const [choice, setChoice] = useState<VoteChoice>("agree");
@@ -71,6 +78,9 @@ export default function Home() {
   const [onChainTxId, setOnChainTxId] = useState<string | null>(null);
   const [executionStatus, setExecutionStatus] = useState<ExecutionStatus>("idle");
   const [transactionStatus, setTransactionStatus] = useState<TestnetTransactionStatusResponse | null>(null);
+  const [walletHistory, setWalletHistory] = useState<WalletTransactionHistoryEntry[]>([]);
+  const [walletHistoryStatus, setWalletHistoryStatus] = useState<WalletHistoryStatus>("idle");
+  const [walletHistoryMessage, setWalletHistoryMessage] = useState("Connect a wallet to load private_vote.aleo history.");
 
   useEffect(() => {
     let cancelled = false;
@@ -157,6 +167,19 @@ export default function Home() {
     };
   }, [onChainTxId]);
 
+  useEffect(() => {
+    if (walletConnected) {
+      setWalletHistory([]);
+      setWalletHistoryStatus("idle");
+      setWalletHistoryMessage("Wallet connected. Load private_vote.aleo history from your wallet.");
+      return;
+    }
+
+    setWalletHistory([]);
+    setWalletHistoryStatus("idle");
+    setWalletHistoryMessage("Connect a wallet to load private_vote.aleo history.");
+  }, [walletConnected, publicKey]);
+
   const agreePercent = useMemo(
     () => calculateAgreePercent(proposal.agreeVotes, proposal.disagreeVotes),
     [proposal.agreeVotes, proposal.disagreeVotes]
@@ -166,6 +189,31 @@ export default function Home() {
     () => [`${plannedVoteCounts.agreeVotes}u64`, `${plannedVoteCounts.disagreeVotes}u64`],
     [plannedVoteCounts]
   );
+  const visibleWalletHistory = walletHistory.slice(0, 4);
+
+  async function loadWalletTransactionHistory() {
+    if (!walletConnected) {
+      setWalletHistoryMessage("Connect an Aleo wallet before loading transaction history.");
+      return;
+    }
+
+    setWalletHistoryStatus("loading");
+    setWalletHistoryMessage("Loading private_vote.aleo history from the connected wallet...");
+
+    try {
+      const history = await requestTransactionHistory(programId);
+      setWalletHistory(history);
+      setWalletHistoryStatus("loaded");
+      setWalletHistoryMessage(
+        history.length > 0
+          ? `Loaded ${history.length} private_vote.aleo transaction${history.length === 1 ? "" : "s"} from wallet history.`
+          : "No private_vote.aleo transactions were returned by this wallet."
+      );
+    } catch (error) {
+      setWalletHistoryStatus("failed");
+      setWalletHistoryMessage(error instanceof Error ? error.message : "Unable to load wallet transaction history.");
+    }
+  }
 
   async function issueTicket() {
     if (!walletConnected || !publicKey) {
@@ -255,6 +303,7 @@ export default function Home() {
       });
       setOnChainTxId(txId);
       setExecutionStatus("submitted");
+      void loadWalletTransactionHistory();
 
       if (apiStatus === "connected") {
         const serverReport = await readJson<VoteReport>(
@@ -463,6 +512,52 @@ export default function Home() {
                   </a>
                 </div>
               ) : null}
+              <div className="mt-4 rounded-md border border-stone-950 bg-white p-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="inline-flex items-center gap-2 text-xs font-black uppercase text-[#6f3d2f]">
+                      <History size={14} />
+                      Wallet transaction history
+                    </p>
+                    <strong className="mt-1 block text-sm">
+                      {walletHistoryStatus === "loading"
+                        ? "Loading from wallet"
+                        : walletHistoryStatus === "loaded"
+                          ? `${walletHistory.length} transaction${walletHistory.length === 1 ? "" : "s"}`
+                          : walletHistoryStatus === "failed"
+                            ? "History unavailable"
+                            : "Ready to load"}
+                    </strong>
+                  </div>
+                  <Button
+                    className="w-fit"
+                    disabled={!walletConnected || walletHistoryStatus === "loading"}
+                    onClick={() => void loadWalletTransactionHistory()}
+                    type="button"
+                    variant="outline"
+                  >
+                    <RefreshCw className={walletHistoryStatus === "loading" ? "animate-spin" : ""} size={14} />
+                    Refresh history
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs font-bold text-stone-600">{walletHistoryMessage}</p>
+                {visibleWalletHistory.length > 0 ? (
+                  <div className="mt-3 grid gap-2">
+                    {visibleWalletHistory.map((transaction) => (
+                      <a
+                        className="flex items-center justify-between gap-3 rounded-md border border-stone-950 bg-[#eef0e8] px-3 py-2 text-xs font-black text-[#6f3d2f] underline"
+                        href={`${testnetExplorerBaseUrl}/${transaction.transactionId}`}
+                        key={`${transaction.id}-${transaction.transactionId}`}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        <span className="min-w-0 truncate">{transaction.transactionId}</span>
+                        <ExternalLink className="shrink-0" size={14} />
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
           </CardContent>
         </Card>
