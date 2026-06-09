@@ -284,3 +284,6 @@
 - Added frontend proposal selection, wallet-authored proposal creation, and proposal closing.
 - Added clear current/final outcome display using the `agree >= disagree` rule.
 - Documented that current voting remains binary agree/disagree per issued demo ticket and does not yet enforce one-wallet-one-vote with a real record/nullifier strategy.
+- PR #14 was merged into `main`, and Vercel deployment `dpl_C4P86NKSrQRctjPQugzGZTAS7GDr` is Ready.
+- `aleo-private-vote.vercel.app` points to `aleo-private-vote-2ns0uifs6-qiaopengjuns-projects.vercel.app`.
+- Confirmed the new local Next.js build no longer contains the previously reported `918.*.js` chunk name, so a hard browser refresh should clear stale chunk references.
