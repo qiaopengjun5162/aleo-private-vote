@@ -131,3 +131,7 @@ Rust 客户端参考当前目录里已经调通的 `hello/client-rust` 项目：
 - `just rust-execute-testnet` 从测试网拉取已部署程序并广播交易。
 - 测试网广播需要 `PRIVATE_KEY`；dry-run 未设置 `PRIVATE_KEY` 时使用开发用私钥。
 - `NODE_URL` 默认是 `https://api.provable.com/v2/testnet`。
+
+## 许可证
+
+MIT

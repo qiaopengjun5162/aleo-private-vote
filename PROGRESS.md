@@ -117,3 +117,8 @@
 
 - Reworked `README.md` and `README_zh.md` to present Aleo Private Vote as an independent project instead of a Bootcamp task submission.
 - Renamed Task-oriented sections to project and testnet deployment sections.
+
+## 2026-06-09 License
+
+- Added the MIT `LICENSE` file.
+- Added License sections to `README.md` and `README_zh.md`.

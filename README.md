@@ -143,3 +143,7 @@ The Rust client follows the working pattern from the local `hello/client-rust` p
 - https://github.com/ProvableHQ/leo-examples/tree/main/vote
 - https://docs.aleo.org/build/sdk/overview
 - https://github.com/provablehq/sdk/tree/mainnet/sdk
+
+## License
+
+MIT
