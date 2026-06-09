@@ -258,3 +258,9 @@
 - Added local signature verification with `Signature.fromBytesLe()` and `Signature.verify(Address, message)` before displaying the proof as verified.
 - Added a wallet ownership proof panel that shows signing status, verification result, challenge transcript, and signature hex.
 - Added Vitest coverage for challenge formatting, UTF-8 encoding, and signature hex serialization.
+- PR #11 was merged into `main`, and Vercel deployment `dpl_JA66unZZ2Yz1YM8yJ26voZZEjxFd` is Ready.
+- `aleo-private-vote.vercel.app` points to `aleo-private-vote-3bnnm84od-qiaopengjuns-projects.vercel.app`.
+- Verified production HTML includes the `Wallet ownership proof` panel and `Sign challenge` button.
+- Verified the production JavaScript bundle includes the `signMessage`, `fromBytesLe`, and wallet ownership challenge paths.
+- Verified the production transaction status route still returns accepted `private_vote.aleo/main` for `at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`.
+- Documented that Vercel production deploys must run from `frontend/`; deploying from the repository root fails because the root package is not a Next.js app.
