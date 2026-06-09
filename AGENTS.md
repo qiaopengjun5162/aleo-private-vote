@@ -35,7 +35,8 @@
 - Prefer real, verifiable wallet/testnet/backend behavior over presentation-only UI.
 - Keep local demo fallbacks visibly labeled and do not let them masquerade as completed on-chain flows.
 - Proposal creation and closing are in-memory demo flows unless a real persisted backend or on-chain proposal path is explicitly added.
-- The current frontend vote type is binary agree/disagree per issued demo ticket; do not imply candidate voting, weighted voting, or enforced one-wallet-one-vote until those mechanics are implemented.
+- The current frontend vote type is binary agree/disagree per issued demo ticket. The browser workspace blocks the same connected wallet from voting twice on the same proposal locally, but this is not an on-chain nullifier or durable backend guarantee.
+- Do not imply candidate voting, weighted voting, or chain-enforced one-wallet-one-vote until those mechanics are implemented.
 - Review and refactor code for correctness, error handling, maintainability, and security as part of normal delivery.
 - After every code or configuration change, update the relevant docs in the same change set.
 - Keep `README.md` structured like an independent open-source project: overview, features, quick start, installation, usage, requirements, project structure, contributing, contributors, and license.
@@ -64,6 +65,7 @@
 - `pnpm --filter @aleo-private-vote/frontend typecheck` reads `.next/types`; run `pnpm --filter @aleo-private-vote/frontend build` first if those generated files are missing.
 - Vercel production deploys must run from `frontend/` with the linked project. Deploying from the repository root can fail because the root `package.json` does not declare `next`.
 - Start the backend before the frontend for full-stack demos. If the API is unavailable, the frontend intentionally falls back to local demo mode.
+- In local demo mode, the frontend persists proposals, the current ticket, latest report, local wallet vote locks, and the last wallet execution id in `localStorage` under `aleo-private-vote.session.v1`.
 - Vercel project SSO deployment protection must stay disabled for the public `aleo-private-vote.vercel.app` demo; if the live URL redirects to Vercel Login, check `vercel project protection aleo-private-vote --format json --scope qiaopengjuns-projects`.
 - Before running `just deploy-testnet`, confirm the Leo `program ...` id is unique on testnet; `private_vote.aleo` may need to be renamed for a real deployment.
 - `private_vote.aleo` is now deployed on testnet. Deployment tx: `at18jhvcs9gnjwhnqhzgu6sl5mkuyqc9vgt8h5et8sxh98udyg70vpqdyg87a`.

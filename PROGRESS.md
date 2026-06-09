@@ -287,3 +287,18 @@
 - PR #14 was merged into `main`, and Vercel deployment `dpl_C4P86NKSrQRctjPQugzGZTAS7GDr` is Ready.
 - `aleo-private-vote.vercel.app` points to `aleo-private-vote-2ns0uifs6-qiaopengjuns-projects.vercel.app`.
 - Confirmed the new local Next.js build no longer contains the previously reported `918.*.js` chunk name, so a hard browser refresh should clear stale chunk references.
+
+## 2026-06-10 Persistent Vote Workspace
+
+- Added a browser-persisted vote workspace for local proposals, selected proposal, ticket receipt, latest report, proof result, wallet execution id, resolved on-chain id, and local wallet vote records.
+- Added a browser-local one-wallet-per-proposal guard so the same connected wallet cannot issue another ticket or vote again on the same proposal in the same local workspace.
+- Preserved successful wallet submissions when backend report storage fails by switching to a local report instead of marking the already-submitted execution as failed.
+- Added a `Reset local` control and workspace saved status in the frontend header.
+- Kept the docs explicit that this is a browser workspace guard, not a real chain-level record/nullifier guarantee.
+- Added Vitest coverage for persisted workspace normalization and duplicate local vote replacement.
+- Verified `pnpm --filter @aleo-private-vote/frontend test`: 7 files / 31 tests passed.
+- Verified `pnpm --filter @aleo-private-vote/frontend typecheck`.
+- Verified `pnpm --filter @aleo-private-vote/frontend build`.
+- Verified `just check`: Leo tests, backend typecheck/test/build, frontend typecheck/test/build, client-ts typecheck/build, and client-rust cargo check passed.
+- Verified local production smoke with `next start`: HTTP 200, desktop DOM contains `Aleo Private Vote`, `Reset local`, `Local workspace`, and `Proposal room`; console error log was empty.
+- Verified mobile 390px smoke: no horizontal overflow, `Reset local` renders once, and console error log was empty.
