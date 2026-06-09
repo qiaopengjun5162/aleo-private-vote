@@ -6,6 +6,8 @@ export type Proposal = {
   agreeVotes: number;
   disagreeVotes: number;
   ticketsIssued: number;
+  status: "active" | "passed" | "failed";
+  closedAt?: string;
 };
 
 export type VoteReport = {
@@ -32,7 +34,8 @@ const seedProposals: Proposal[] = [
     proposer: "aleo1privatevoteproposer0000000000000000000000000000000000000",
     agreeVotes: 12,
     disagreeVotes: 3,
-    ticketsIssued: 21
+    ticketsIssued: 21,
+    status: "active"
   }
 ];
 

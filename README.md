@@ -30,6 +30,7 @@ Voting is a natural privacy use case: voters should be able to cast a choice wit
 ### Features
 
 - Privacy-oriented voting model with proposal, ticket, and vote records in Leo.
+- Proposal room with selectable demo proposals, wallet-authored proposal creation, and active / passed / failed state.
 - Local Aleo SDK execution in a browser Web Worker before wallet approval.
 - Testnet wallet execution for `private_vote.aleo/main`.
 - Same-origin testnet transaction status checks after wallet submission.
@@ -69,14 +70,15 @@ The project has two layers of voting logic:
 The DApp flow is:
 
 1. The user connects a supported Aleo wallet in the frontend.
-2. The user can sign an ownership challenge; the frontend verifies the signature against the connected Aleo address.
-3. The frontend loads a proposal from the backend.
-4. The user requests a private ticket; the backend issues a demo ticket commitment and increments `ticketsIssued`.
+2. The user can create or select a proposal in the proposal room.
+3. The user can sign an ownership challenge; the frontend verifies the signature against the connected Aleo address.
+4. The user requests a private ticket for the selected active proposal; the backend issues a demo ticket commitment and increments `ticketsIssued`.
 5. The user chooses `Agree` or `Disagree`.
 6. The frontend runs `private_vote.aleo/main` in an Aleo SDK Web Worker with the next public tally.
 7. If the local SDK execution returns `true`, the frontend opens the connected wallet and requests a testnet execution of `private_vote.aleo/main`.
 8. After the wallet returns the transaction id, the frontend displays the Explorer link and submits a verification report to the backend.
 9. The backend stores the report and returns the updated public tally.
+10. The proposal can be closed, freezing the current outcome as `passed` when `agree >= disagree` or `failed` otherwise.
 
 In the full on-chain flow, `propose`, `new_ticket`, `agree`, and `disagree` model private record-based voting. The lightweight `main` verifier keeps local demos, CI, and SDK checks fast while still exercising the Aleo execution path.
 
@@ -171,12 +173,13 @@ The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUB
 
 ## Project Scope
 
-- Create and display voting proposals.
+- Create, select, close, and display demo voting proposals.
 - Connect Leo, Shield, Puzzle, or Fox Wallet before issuing a ticket or casting a vote.
 - Optionally enable a Dynamic embedded Aleo wallet entry when `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is configured.
 - Sign and verify a wallet ownership challenge against the connected address.
 - Issue private voting tickets.
-- Cast agree or disagree votes.
+- Cast one agree or disagree vote per issued demo ticket.
+- Show current and final proposal outcomes using the `agree >= disagree` rule.
 - Submit an Aleo wallet testnet execution for `private_vote.aleo/main`.
 - Preview the wallet execution request before approval, including program, function, inputs, network, and public fee.
 - Track submitted wallet transactions as checking, pending, accepted, or unavailable.
@@ -211,6 +214,8 @@ When this variable is missing, the unified wallet modal keeps the Dynamic option
 
 - `GET /health`: health check.
 - `GET /api/proposals`: list demo proposals and public tallies.
+- `POST /api/proposals`: create an in-memory demo proposal.
+- `POST /api/proposals/:proposalId/close`: close an active demo proposal as passed or failed.
 - `POST /api/tickets`: issue a private ticket commitment for a proposal.
 - `POST /api/reports`: store a verified demo vote report and return the updated tally.
 
@@ -283,6 +288,7 @@ The Rust client follows the working pattern from the local `hello/client-rust` p
 This project is intentionally kept small, but it should still behave like a trustworthy product surface:
 
 - Move browser voting from the lightweight `main` verifier to the full record-based `new_ticket`, `agree`, and `disagree` flow.
+- Enforce one vote per eligible voter with a real record/nullifier strategy instead of the current demo ticket guard.
 - Read proposal state and tallies from chain data instead of local demo state whenever possible.
 - Deploy the backend API with persistent storage, rate limits, and health checks.
 - Persist wallet-submitted transaction status history instead of keeping it only in browser state.

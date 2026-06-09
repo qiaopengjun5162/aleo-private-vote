@@ -275,3 +275,12 @@
 - PR #13 was merged into `main`, and Vercel deployment `dpl_B9TzMjBhWvAr7x8YYZuS2R33EyxH` is Ready.
 - `aleo-private-vote.vercel.app` points to `aleo-private-vote-8pqhgrnxm-qiaopengjuns-projects.vercel.app`.
 - Verified the deployment and alias through Vercel CLI. Production HTTP smoke from this environment could not complete because shell curl and Browser access to the Vercel domain timed out or reset after deployment.
+
+## 2026-06-09 Proposal Room and Outcome Clarity
+
+- Added proposal status to the demo data model: active, passed, and failed.
+- Added backend demo endpoints to create proposals and close proposals.
+- Rejected ticket issuance and report submission for closed proposals.
+- Added frontend proposal selection, wallet-authored proposal creation, and proposal closing.
+- Added clear current/final outcome display using the `agree >= disagree` rule.
+- Documented that current voting remains binary agree/disagree per issued demo ticket and does not yet enforce one-wallet-one-vote with a real record/nullifier strategy.

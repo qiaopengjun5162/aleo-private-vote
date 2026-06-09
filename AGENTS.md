@@ -34,6 +34,8 @@
 - Treat this as a production-grade product, not a disposable demo or Bootcamp-only submission.
 - Prefer real, verifiable wallet/testnet/backend behavior over presentation-only UI.
 - Keep local demo fallbacks visibly labeled and do not let them masquerade as completed on-chain flows.
+- Proposal creation and closing are in-memory demo flows unless a real persisted backend or on-chain proposal path is explicitly added.
+- The current frontend vote type is binary agree/disagree per issued demo ticket; do not imply candidate voting, weighted voting, or enforced one-wallet-one-vote until those mechanics are implemented.
 - Review and refactor code for correctness, error handling, maintainability, and security as part of normal delivery.
 - After every code or configuration change, update the relevant docs in the same change set.
 - Keep `README.md` structured like an independent open-source project: overview, features, quick start, installation, usage, requirements, project structure, contributing, contributors, and license.
