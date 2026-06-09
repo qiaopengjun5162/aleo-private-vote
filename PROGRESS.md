@@ -219,3 +219,10 @@
 - Created GitHub release `v0.1.0 - Aleo Private Vote testnet MVP`.
 - Fixed the README release badge by publishing the first release; Shields now returns `release: v0.1.0`.
 - Release notes include live demo, supported wallets, testnet deployment transaction, interaction transaction, and verification checks.
+
+## 2026-06-09 Unified Wallet Connect Modal
+
+- Replaced the split external-wallet and embedded-wallet header buttons with one `Connect Wallet` modal.
+- Matched the Aleo wallet adapter docs pattern with top-level `Aleo Wallet Adapter` and `Dynamic` choices.
+- Kept external wallet execution on the official adapter path and kept Dynamic disabled unless `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is configured.
+- Reviewed local Bootcamp examples; most use a single adapter provider path, so this project keeps the official adapter logic while adding the docs-style aggregated connection surface.

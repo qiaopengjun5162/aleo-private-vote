@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { transactionStatusLabels, type TestnetTransactionStatusResponse } from "@/transactionStatus";
 import { AleoWalletButton, useAleoWallet } from "@/wallet/AleoWalletProvider";
-import { EmbeddedWalletButton } from "@/wallet/EmbeddedWalletButton";
 import { AleoWorker } from "@/workers/AleoWorker";
 import {
   calculateAgreePercent,
@@ -321,7 +320,6 @@ export default function Home() {
         </div>
         <div className="flex flex-col items-start gap-3 md:items-end">
           <AleoWalletButton />
-          <EmbeddedWalletButton />
           <Badge>
             <ShieldCheck size={16} />
             {walletConnected ? (apiStatus === "connected" ? "wallet + on-chain + backend" : "wallet + on-chain") : "wallet required"}

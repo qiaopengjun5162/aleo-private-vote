@@ -106,7 +106,7 @@ just frontend-dev
 NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @aleo-private-vote/frontend dev
 ```
 
-未设置这个变量时，嵌入式钱包 provider 和按钮都不会渲染。因为它是 `NEXT_PUBLIC_` 变量，生产部署必须在 `next build` 前设置，比如先在 Vercel Project Settings 里配置再重新部署。当前投票 execution 仍然走外部 Aleo 钱包 adapter；Dynamic 嵌入式钱包的交易证明和广播路径，要等真实 Dynamic 环境和测试网账号验证后再接入。
+未设置这个变量时，统一钱包弹窗会保留 Dynamic 选项但置为禁用，并且不会加载 embedded wallet provider。因为它是 `NEXT_PUBLIC_` 变量，生产部署必须在 `next build` 前设置，比如先在 Vercel Project Settings 里配置再重新部署。当前投票 execution 仍然走外部 Aleo 钱包 adapter；Dynamic 嵌入式钱包的交易证明和广播路径，要等真实 Dynamic 环境和测试网账号验证后再接入。
 
 ## 后端 API
 
@@ -137,7 +137,8 @@ NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @al
 - 用 `ProgramManager.run()` 做本地执行，再展示验证报告。
 - 使用官方 `@provablehq/aleo-wallet-adaptor-*` 包接入钱包连接和 execution。
 - 使用自定义 React 19 兼容钱包选择器，在扩展探测完成前也稳定展示所有支持的钱包入口。
-- 仅在配置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` 后加载 Dynamic 嵌入式钱包 UI。
+- 使用一个 `Connect Wallet` 弹窗统一展示外部 Aleo wallet adapter 和 Dynamic embedded wallet 路径。
+- 未配置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` 时，Dynamic 选项保持禁用。
 - 展示准确的钱包 execution request，并跟踪本地检查、钱包批准、已提交和失败状态。
 - 本地 SDK 检查通过后，请求钱包广播测试网 execution。
 - 钱包返回交易 id 后，轮询同源 `/api/testnet/transactions/:txId` route，避免浏览器直接跨域依赖 Provable API。

@@ -7,13 +7,14 @@ import { ShieldWalletAdapter } from "@provablehq/aleo-wallet-adaptor-shield";
 import type { BaseAleoWalletAdapter } from "@provablehq/aleo-wallet-adaptor-core";
 import { Network, type Account, type TransactionOptions } from "@provablehq/aleo-types";
 import { WalletDecryptPermission, WalletReadyState } from "@provablehq/aleo-wallet-standard";
-import { Wallet } from "lucide-react";
+import { ChevronRight, Shield, Wallet, X } from "lucide-react";
 import {
   defaultWallets,
   isReadyWallet,
   mergeWalletOptions,
   type WalletOption
 } from "@/wallet/walletOptions";
+import { EmbeddedWalletOption } from "@/wallet/EmbeddedWalletOption";
 import {
   createContext,
   useCallback,
@@ -35,7 +36,7 @@ type AleoWalletContextValue = {
   error: string | null;
   publicKey: string | null;
   wallets: WalletOption[];
-  connect: (walletName: string) => Promise<void>;
+  connect: (walletName: string) => Promise<boolean>;
   disconnect: () => Promise<void>;
   executeTransaction: (options: TransactionOptions) => Promise<string>;
 };
@@ -81,6 +82,12 @@ function walletStatusLabel(wallet: WalletOption) {
 function walletActionLabel(wallet: WalletOption, connectingWallet: string | null) {
   if (connectingWallet === wallet.name) return "Connecting...";
   return isReadyWallet(wallet) ? `Connect ${wallet.name}` : `Install ${wallet.name}`;
+}
+
+function walletStatusClass(wallet: WalletOption) {
+  if (isReadyWallet(wallet)) return "bg-[#d9ff65]";
+  if (wallet.readyState === WalletReadyState.UNSUPPORTED) return "bg-[#f4c8be]";
+  return "bg-white/70";
 }
 
 export function AleoWalletProvider({ children }: { children: ReactNode }) {
@@ -130,14 +137,15 @@ export function AleoWalletProvider({ children }: { children: ReactNode }) {
 
   const connect = useCallback(async (walletName: string) => {
     const adapter = adaptersRef.current.find((item) => item.name === walletName);
-    if (!adapter || connectingWallet || account) return;
+    if (!adapter || connectingWallet) return false;
+    if (account) return true;
 
     if (adapter.readyState !== WalletReadyState.INSTALLED && adapter.readyState !== WalletReadyState.LOADABLE) {
       if (adapter.url) {
         window.open(adapter.url, "_blank", "noopener,noreferrer");
       }
       setError(`${adapter.name} is not installed or not available in this browser.`);
-      return;
+      return false;
     }
 
     setConnectingWallet(adapter.name);
@@ -146,8 +154,10 @@ export function AleoWalletProvider({ children }: { children: ReactNode }) {
       const connectedAccount = await adapter.connect(Network.TESTNET, WalletDecryptPermission.NoDecrypt, [programId]);
       selectedAdapterRef.current = adapter;
       setAccount(connectedAccount);
+      return true;
     } catch (walletError) {
       setError(walletError instanceof Error ? walletError.message : String(walletError));
+      return false;
     } finally {
       setConnectingWallet(null);
     }
@@ -209,6 +219,8 @@ function formatAddress(address: string) {
 export function AleoWalletButton() {
   const { connected, connectingWallet, connect, disconnect, error, publicKey, wallets } = useAleoWallet();
   const installedWallets = wallets.filter(isReadyWallet);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showExternalWallets, setShowExternalWallets] = useState(false);
 
   if (connected && publicKey) {
     return (
@@ -224,30 +236,96 @@ export function AleoWalletButton() {
 
   return (
     <div className="flex w-full max-w-xl flex-col items-start gap-2 md:items-end">
-      <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 md:w-auto md:min-w-[30rem]">
-        {wallets.map((wallet) => (
-          <Button
-            disabled={Boolean(connectingWallet)}
-            key={wallet.name}
-            className="h-auto min-h-14 justify-between px-3 py-2 text-left"
-            onClick={() => connect(wallet.name)}
-            variant={isReadyWallet(wallet) ? "primary" : "outline"}
-          >
-            <span className="flex items-center gap-2">
-              <Wallet size={16} />
-              <span className="whitespace-nowrap">{walletActionLabel(wallet, connectingWallet)}</span>
-            </span>
-            <span className="rounded-sm border border-stone-950/20 bg-white/70 px-1.5 py-0.5 text-[10px] font-black uppercase text-stone-700">
-              {walletStatusLabel(wallet)}
-            </span>
-          </Button>
-        ))}
-      </div>
+      <Button onClick={() => setIsModalOpen(true)} type="button" variant="primary">
+        <Wallet size={16} />
+        Connect Wallet
+      </Button>
       {error ? <span className="max-w-xs text-xs font-bold text-[#9f2d1d]">{error}</span> : null}
-      {installedWallets.length === 0 ? (
-        <span className="max-w-md text-xs font-bold text-stone-700">
-          Choose a wallet to install, then refresh this page after the extension is available.
-        </span>
+      {isModalOpen ? (
+        <div
+          aria-labelledby="wallet-connect-title"
+          aria-modal="true"
+          className="fixed inset-0 z-50 grid place-items-center bg-stone-950/70 px-4 py-8 backdrop-blur-sm"
+          role="dialog"
+        >
+          <div className="w-full max-w-xl rounded-md border border-stone-950 bg-[#eef0e8] p-5 text-left shadow-[10px_10px_0_#1c1917]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-serif text-3xl font-black" id="wallet-connect-title">
+                  Connect Wallet
+                </h2>
+                <p className="mt-1 text-sm font-bold text-stone-700">Choose how you would like to connect to Aleo.</p>
+              </div>
+              <Button
+                aria-label="Close wallet connection dialog"
+                className="h-9 w-9 px-0"
+                onClick={() => setIsModalOpen(false)}
+                type="button"
+                variant="outline"
+              >
+                <X size={16} />
+              </Button>
+            </div>
+
+            <div className="mt-5 grid gap-3">
+              <button
+                className="flex w-full items-center justify-between gap-4 rounded-md border border-stone-950 bg-white p-4 text-left shadow-[4px_4px_0_#1c1917] transition hover:-translate-y-0.5 hover:bg-[#d9ff65]"
+                onClick={() => setShowExternalWallets((current) => !current)}
+                type="button"
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-stone-950 bg-[#f4e4cf]">
+                    <Shield size={20} />
+                  </span>
+                  <span className="min-w-0">
+                    <strong className="block text-base">Aleo Wallet Adapter</strong>
+                    <span className="block text-sm font-bold text-stone-600">Connect an external wallet extension</span>
+                  </span>
+                </span>
+                <ChevronRight
+                  className={showExternalWallets ? "rotate-90 transition" : "transition"}
+                  size={18}
+                />
+              </button>
+
+              {showExternalWallets ? (
+                <div className="grid gap-2 rounded-md border border-stone-950 bg-[#f4e4cf] p-3 sm:grid-cols-2">
+                  {wallets.map((wallet) => (
+                    <Button
+                      className="h-auto min-h-14 justify-between px-3 py-2 text-left"
+                      disabled={Boolean(connectingWallet)}
+                      key={wallet.name}
+                      onClick={() => {
+                        void connect(wallet.name).then((didConnect) => {
+                          if (didConnect) setIsModalOpen(false);
+                        });
+                      }}
+                      type="button"
+                      variant={isReadyWallet(wallet) ? "primary" : "outline"}
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Wallet size={16} />
+                        <span className="truncate">{walletActionLabel(wallet, connectingWallet)}</span>
+                      </span>
+                      <span
+                        className={`rounded-sm border border-stone-950/20 px-1.5 py-0.5 text-[10px] font-black uppercase text-stone-700 ${walletStatusClass(wallet)}`}
+                      >
+                        {walletStatusLabel(wallet)}
+                      </span>
+                    </Button>
+                  ))}
+                  {installedWallets.length === 0 ? (
+                    <p className="text-xs font-bold text-stone-700 sm:col-span-2">
+                      Choose a wallet to install, then refresh this page after the extension is available.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <EmbeddedWalletOption onOpen={() => setIsModalOpen(false)} />
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

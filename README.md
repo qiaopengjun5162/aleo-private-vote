@@ -198,7 +198,7 @@ The frontend also includes optional Dynamic embedded wallet support through `@dy
 NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @aleo-private-vote/frontend dev
 ```
 
-When this variable is missing, the embedded wallet provider and button are not rendered. Because it is a `NEXT_PUBLIC_` variable, production deployments must set it before `next build` runs, such as through Vercel Project Settings before redeploying. Current vote execution still uses the external Aleo wallet adapter flow; embedded wallet transaction proving should be wired only after the Dynamic environment and broadcast path are verified with a real testnet account.
+When this variable is missing, the unified wallet modal keeps the Dynamic option disabled and does not load the embedded wallet provider. Because it is a `NEXT_PUBLIC_` variable, production deployments must set it before `next build` runs, such as through Vercel Project Settings before redeploying. Current vote execution still uses the external Aleo wallet adapter flow; embedded wallet transaction proving should be wired only after the Dynamic environment and broadcast path are verified with a real testnet account.
 
 ## Backend API
 
@@ -229,7 +229,8 @@ The frontend now uses Next.js App Router, React, Tailwind CSS, and local shadcn/
 - Execute `ProgramManager.run()` locally before showing the verification report.
 - Use the official `@provablehq/aleo-wallet-adaptor-*` packages for wallet connection and execution.
 - Render a custom React 19-compatible wallet selector that keeps all supported wallet options visible before extension detection finishes.
-- Load Dynamic embedded wallet UI only when `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is configured.
+- Render one `Connect Wallet` modal with external Aleo wallet adapter and Dynamic embedded wallet paths.
+- Keep the Dynamic option disabled unless `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is configured.
 - Show the exact wallet execution request and track local check, wallet approval, submitted, and failed states.
 - Request wallet testnet execution after the local SDK check succeeds.
 - Poll the same-origin `/api/testnet/transactions/:txId` route after wallet submission so the browser does not depend on direct cross-origin access to the Provable API.
