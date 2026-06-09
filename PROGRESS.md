@@ -195,3 +195,10 @@
 - Vercel deployment `dpl_2ar8k7YFGZXWRhrAyiMmoyvWwGff` is Ready and `aleo-private-vote.vercel.app` points to `aleo-private-vote-7053dss3l-qiaopengjuns-projects.vercel.app`.
 - Disabled Vercel SSO deployment protection after the live `vercel.app` domain redirected to Vercel Login.
 - Verified the public live page in Browser: external wallet options render, the execution request panel renders, and the Dynamic embedded wallet button remains hidden without `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`.
+
+## 2026-06-09 README Open Source Polish
+
+- Reworked `README.md` to follow the `qiaopengjun5162/gogen` open-source project structure.
+- Added Overview, Features, Quick Start, Installation, Usage, Requirements, and Project Structure sections.
+- Kept the all-contributors badge, Contributors table, and `.all-contributorsrc` convention intact for PR-based contribution attribution.
+- Added AGENTS guidance to preserve the README structure and all-contributors markers.
