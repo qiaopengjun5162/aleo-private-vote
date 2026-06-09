@@ -210,3 +210,6 @@
 - Added frontend polling after the wallet returns a transaction id and displayed accepted transaction details in the execution panel.
 - Added Vitest coverage for transaction status payload parsing and UI labels.
 - Verified the route locally with the known interaction tx `at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`, which returned accepted `private_vote.aleo/main`.
+- PR #2 was merged into `main`, and Vercel deployment `dpl_4ATfWxfTpEbGmUwadMMipYwCynAH` is Ready.
+- `aleo-private-vote.vercel.app` points to `aleo-private-vote-b1ow85hx5-qiaopengjuns-projects.vercel.app`.
+- Verified the production route `/api/testnet/transactions/at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`, which returned accepted `private_vote.aleo/main`.
