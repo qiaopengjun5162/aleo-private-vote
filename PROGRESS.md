@@ -122,3 +122,11 @@
 
 - Added the MIT `LICENSE` file.
 - Added License sections to `README.md` and `README_zh.md`.
+
+## 2026-06-09 Vercel Deployment
+
+- Deployed the Next.js frontend to Vercel production.
+- Renamed the Vercel project to `aleo-private-vote`.
+- Added the production alias `https://aleo-private-vote.vercel.app`.
+- Added the live demo URL to `README.md` and `README_zh.md`.
+- Added `.vercel/` to `.gitignore` so local Vercel project metadata stays out of git.

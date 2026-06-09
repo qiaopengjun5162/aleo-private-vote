@@ -5,6 +5,7 @@ target/
 out/
 .env
 .env.local
+.vercel/
 *.log
 *.tsbuildinfo
 screenshots/*.png

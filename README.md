@@ -6,6 +6,8 @@
 ![Next.js](https://img.shields.io/badge/Next.js-16.2.7-black?logo=next.js)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
+Live demo: https://aleo-private-vote.vercel.app
+
 Aleo Private Vote is a privacy-preserving voting DApp for private ticket-based voting on Aleo.
 
 The project starts from the official `ProvableHQ/leo-examples` voting example and turns it into a small full-stack DApp with a Leo program, a TypeScript SDK client, a backend API, and a frontend voting dashboard.
