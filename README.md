@@ -1,4 +1,7 @@
 # Aleo Private Vote
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ![Leo](https://img.shields.io/badge/Leo-4.0.2-purple)
 ![Rust](https://img.shields.io/badge/Rust-1.96.0-orange?logo=rust)
@@ -7,6 +10,10 @@
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
 Live demo: https://aleo-private-vote.vercel.app
+
+## Chinese Documentation
+
+中文文档请参阅 [README_zh.md](README_zh.md)。
 
 Aleo Private Vote is a privacy-preserving voting DApp for private ticket-based voting on Aleo.
 
@@ -146,6 +153,37 @@ The Rust client follows the working pattern from the local `hello/client-rust` p
 - https://docs.aleo.org/build/sdk/overview
 - https://github.com/provablehq/sdk/tree/mainnet/sdk
 
+## Contributing
+
+Contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for setup, testing, testnet safety notes, and pull request guidelines.
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/qiaopengjun5162"><img src="https://avatars.githubusercontent.com/u/124650229?v=4?s=100" width="100px;" alt="Paxon Qiao 乔鹏军"/><br /><sub><b>Paxon Qiao 乔鹏军</b></sub></a><br /><a href="#content-qiaopengjun5162" title="Content">🖋</a></td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td align="center" size="13px" colspan="7">
+        <img src="https://raw.githubusercontent.com/all-contributors/all-contributors-cli/1b8533af435da9854653492b1327a23a4dbd0a10/assets/logo-small.svg">
+          <a href="https://all-contributors.js.org/docs/en/bot/usage">Add your contributions</a>
+        </img>
+      </td>
+    </tr>
+  </tfoot>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
 ## License
 
-MIT
+This project is licensed under the [MIT License](LICENSE).

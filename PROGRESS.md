@@ -130,3 +130,9 @@
 - Added the production alias `https://aleo-private-vote.vercel.app`.
 - Added the live demo URL to `README.md` and `README_zh.md`.
 - Added `.vercel/` to `.gitignore` so local Vercel project metadata stays out of git.
+
+## 2026-06-09 README Contributors
+
+- Added `.all-contributorsrc` based on the `qiaopengjun5162/gogen` README contributor setup.
+- Added the all-contributors badge and Contributors table to `README.md`.
+- Added README links for Chinese documentation and contribution guidelines.
