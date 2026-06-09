@@ -264,3 +264,11 @@
 - Verified the production JavaScript bundle includes the `signMessage`, `fromBytesLe`, and wallet ownership challenge paths.
 - Verified the production transaction status route still returns accepted `private_vote.aleo/main` for `at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`.
 - Documented that Vercel production deploys must run from `frontend/`; deploying from the repository root fails because the root package is not a Next.js app.
+
+## 2026-06-09 Wallet Recovery Guidance
+
+- Added a shared frontend recovery helper for wallet and testnet failures.
+- Added a `Recovery plan` UI panel that keeps the original error visible, explains the likely failure class, and offers retries when the current state can safely retry.
+- Classified rejected wallet signatures or requests, insufficient testnet balance, unavailable wallet extensions, disconnected wallets, failed broadcasts, wallet-history failures, and testnet API outages.
+- Routed wallet connection, wallet history, signature proof, wallet execution, wallet execution status, and testnet acceptance checks through the recovery helper instead of showing only raw adapter errors.
+- Added Vitest coverage for recovery message extraction and the main failure classifications.

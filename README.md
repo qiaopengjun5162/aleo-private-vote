@@ -35,6 +35,7 @@ Voting is a natural privacy use case: voters should be able to cast a choice wit
 - Same-origin testnet transaction status checks after wallet submission.
 - Wallet-scoped transaction history for `private_vote.aleo` through the Aleo wallet adapter.
 - Wallet ownership proof through `signMessage()` and local signature verification against the connected address.
+- Actionable wallet and testnet recovery plans for rejected requests, missing balance, unavailable extensions, disconnected wallets, failed broadcasts, and testnet API outages.
 - Official Aleo wallet adapter support for Leo, Shield, Puzzle, and Fox Wallet.
 - Optional Dynamic embedded Aleo wallet entry, gated by `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`.
 - Backend API for demo proposals, private ticket commitments, and verification reports.
@@ -180,6 +181,7 @@ The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUB
 - Preview the wallet execution request before approval, including program, function, inputs, network, and public fee.
 - Track submitted wallet transactions as checking, pending, accepted, or unavailable.
 - Load the connected wallet's `private_vote.aleo` transaction history after the wallet grants on-chain history permission.
+- Show classified recovery guidance with retry actions when wallet, broadcast, signature, history, or testnet-status checks fail.
 - Show public vote tallies.
 - Generate a local verification report for the demo.
 - Keep testnet execution available through both TypeScript SDK and Rust snarkVM clients.
@@ -242,6 +244,7 @@ The frontend now uses Next.js App Router, React, Tailwind CSS, and local shadcn/
 - Resolve wallet-returned temporary execution ids through `transactionStatus()` before treating them as on-chain transaction ids.
 - Request wallet on-chain history permission and expose a manual `private_vote.aleo` transaction history refresh through `requestTransactionHistory()`.
 - Poll the same-origin `/api/testnet/transactions/:txId` route after wallet submission so the browser does not depend on direct cross-origin access to the Provable API.
+- Route wallet, signature, history, broadcast, and testnet-status failures through the shared recovery helper so users get a concrete next step instead of a raw adapter error.
 - Set `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` in `next.config.ts` for `SharedArrayBuffer` support.
 - Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox.
 - Keep `frontend/public/programs/private_vote.aleo` in sync with `leo/private_vote/build/main.aleo` after Leo program changes.
@@ -283,7 +286,7 @@ This project is intentionally kept small, but it should still behave like a trus
 - Read proposal state and tallies from chain data instead of local demo state whenever possible.
 - Deploy the backend API with persistent storage, rate limits, and health checks.
 - Persist wallet-submitted transaction status history instead of keeping it only in browser state.
-- Expand recovery paths for rejected wallet signatures, insufficient fee balance, failed broadcasts, and unavailable wallet extensions.
+- Add telemetry for recovery outcomes so repeated wallet/testnet failure modes can be reviewed without collecting private voting data.
 - Add end-to-end tests for connect wallet, issue ticket, approve execution, and Explorer-link display.
 
 ## References

@@ -55,6 +55,7 @@
 - Treat the value returned by `executeTransaction()` as a wallet execution id first; resolve the on-chain `transactionId` through `transactionStatus()` before using Explorer or testnet API checks.
 - External wallet connections request `WalletDecryptPermission.OnChainHistory` for `private_vote.aleo`; use `requestTransactionHistory(programId)` for wallet-scoped history and keep explorer/API checks as the on-chain acceptance signal.
 - Wallet transaction status checks use the frontend route `/api/testnet/transactions/[txId]`, which proxies `https://api.provable.com/v2/testnet/transaction/{txId}` by default and can be pointed elsewhere with `ALEO_TESTNET_API_URL`.
+- Wallet, signature, history, broadcast, and testnet-status failures should use `createRecoveryNotice()` and the shared recovery panel instead of raw unclassified messages.
 - Next serves `public/programs/private_vote.aleo`; refresh it from `leo/private_vote/build/main.aleo` after Leo program changes.
 - The browser SDK still runs inside a Web Worker; keep COOP/COEP headers in `next.config.ts` for SharedArrayBuffer support.
 - Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox and fails with `Operation not permitted`.
