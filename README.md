@@ -3,11 +3,12 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/qiaopengjun5162/aleo-private-vote)
+![GitHub license](https://img.shields.io/github/license/qiaopengjun5162/aleo-private-vote)
 ![Leo](https://img.shields.io/badge/Leo-4.0.2-purple)
 ![Rust](https://img.shields.io/badge/Rust-1.96.0-orange?logo=rust)
 ![Node.js](https://img.shields.io/badge/Node.js-24.15.0-green?logo=node.js)
 ![Next.js](https://img.shields.io/badge/Next.js-16.2.7-black?logo=next.js)
-![GitHub license](https://img.shields.io/github/license/qiaopengjun5162/aleo-private-vote)
 ![GitHub last commit](https://img.shields.io/github/last-commit/qiaopengjun5162/aleo-private-vote)
 
 Live demo: [https://aleo-private-vote.vercel.app](https://aleo-private-vote.vercel.app)
