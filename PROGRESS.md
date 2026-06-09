@@ -236,3 +236,6 @@
 - Switched external wallet connection permission to `WalletDecryptPermission.OnChainHistory` for `private_vote.aleo`.
 - Added `requestTransactionHistory(programId)` support to the wallet context and a frontend transaction-history panel with explorer links.
 - Added unit coverage for wallet transaction-history normalization and deduplication.
+- PR #7 was merged into `main`, and Vercel deployment `dpl_GqPrSi1khbjgJYk5BYNAkNZso8Hx` is Ready.
+- `aleo-private-vote.vercel.app` points to `aleo-private-vote-cerb7tfey-qiaopengjuns-projects.vercel.app`.
+- Verified production HTML includes the `Wallet transaction history` panel and the production transaction status route still returns accepted `private_vote.aleo/main` for `at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`.
