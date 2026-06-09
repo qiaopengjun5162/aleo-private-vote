@@ -59,6 +59,7 @@
 - The browser SDK still runs inside a Web Worker; keep COOP/COEP headers in `next.config.ts` for SharedArrayBuffer support.
 - Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox and fails with `Operation not permitted`.
 - `pnpm --filter @aleo-private-vote/frontend typecheck` reads `.next/types`; run `pnpm --filter @aleo-private-vote/frontend build` first if those generated files are missing.
+- Vercel production deploys must run from `frontend/` with the linked project. Deploying from the repository root can fail because the root `package.json` does not declare `next`.
 - Start the backend before the frontend for full-stack demos. If the API is unavailable, the frontend intentionally falls back to local demo mode.
 - Vercel project SSO deployment protection must stay disabled for the public `aleo-private-vote.vercel.app` demo; if the live URL redirects to Vercel Login, check `vercel project protection aleo-private-vote --format json --scope qiaopengjuns-projects`.
 - Before running `just deploy-testnet`, confirm the Leo `program ...` id is unique on testnet; `private_vote.aleo` may need to be renamed for a real deployment.
