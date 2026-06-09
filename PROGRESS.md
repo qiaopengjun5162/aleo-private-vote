@@ -103,3 +103,8 @@
 - Confirmed the interaction transaction was accepted and returned local plaintext output `true`; the public API shows the private boolean output as ciphertext.
 - Captured the Explorer interaction screenshot at `screenshots/testnet-interaction.png`.
 - Added `TASK4_SUBMISSION.md` with the deployment transaction, interaction transaction, explorer links, and screenshot path.
+
+## 2026-06-09 Contribution Guide
+
+- Added `CONTRIBUTING.md` with project scope, setup commands, testnet safety notes, change guidelines, and a PR checklist.
+- Documented that testnet logs must be sanitized because Leo can print `.env` values.
