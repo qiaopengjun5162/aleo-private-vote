@@ -143,3 +143,11 @@
 - Added a wallet connect button and connected address display to the main DApp header.
 - Required a connected wallet before issuing a ticket or casting a vote.
 - Updated README documentation to describe the wallet-first DApp flow.
+
+## 2026-06-09 Wallet Execution Path
+
+- Added Leo Wallet `requestExecution` support for `private_vote.aleo/main`.
+- Changed the vote flow to run the local SDK check first, then request a wallet-approved testnet execution.
+- Display the returned wallet execution transaction id with a Provable Explorer link.
+- Added a compact three-step status strip so users can see the required flow at a glance.
+- Documented the current limitation that browser voting still uses the lightweight verifier, not the full record-based flow.

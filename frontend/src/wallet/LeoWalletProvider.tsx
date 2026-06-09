@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type AleoTransaction,
   DecryptPermission,
   WalletAdapterNetwork,
   WalletReadyState,
@@ -28,6 +29,7 @@ type LeoWalletContextValue = {
   readyState: WalletReadyState;
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
+  requestExecution: (transaction: AleoTransaction) => Promise<string>;
 };
 
 const LeoWalletContext = createContext<LeoWalletContextValue | null>(null);
@@ -110,6 +112,15 @@ export function LeoWalletProvider({ children }: { children: ReactNode }) {
     setPublicKey(null);
   }, []);
 
+  const requestExecution = useCallback(async (transaction: AleoTransaction) => {
+    const adapter = adapterRef.current;
+    if (!adapter || !adapter.publicKey) {
+      throw new Error("Leo Wallet is not connected.");
+    }
+
+    return adapter.requestExecution(transaction);
+  }, []);
+
   const value = useMemo(
     () => ({
       connected,
@@ -118,9 +129,10 @@ export function LeoWalletProvider({ children }: { children: ReactNode }) {
       publicKey,
       readyState,
       connect,
-      disconnect
+      disconnect,
+      requestExecution
     }),
-    [connected, connecting, error, publicKey, readyState, connect, disconnect]
+    [connected, connecting, error, publicKey, readyState, connect, disconnect, requestExecution]
   );
 
   return <LeoWalletContext.Provider value={value}>{children}</LeoWalletContext.Provider>;

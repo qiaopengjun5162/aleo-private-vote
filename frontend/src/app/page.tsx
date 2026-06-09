@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckCircle2, Fingerprint, ShieldCheck, Ticket, Vote } from "lucide-react";
+import { Transaction, WalletAdapterNetwork } from "@demox-labs/aleo-wallet-adapter-base";
+import { CheckCircle2, ExternalLink, Fingerprint, ShieldCheck, Ticket, Vote } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ import {
 } from "@/voteFlow";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8787";
+const programId = "private_vote.aleo";
+const executionFeeMicrocredits = 35_000;
 
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -40,7 +43,7 @@ async function readProgram() {
 }
 
 export default function Home() {
-  const { connected: walletConnected, publicKey } = useLeoWallet();
+  const { connected: walletConnected, publicKey, requestExecution } = useLeoWallet();
   const [proposal, setProposal] = useState<Proposal>(fallbackProposal);
   const [ticket, setTicket] = useState<TicketReceipt | null>(null);
   const [choice, setChoice] = useState<VoteChoice>("agree");
@@ -50,6 +53,7 @@ export default function Home() {
   const [message, setMessage] = useState<string>("Loading backend proposal...");
   const [isIssuing, setIsIssuing] = useState(false);
   const [isProving, setIsProving] = useState(false);
+  const [onChainTxId, setOnChainTxId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +94,7 @@ export default function Home() {
 
     setIsIssuing(true);
     setReport(null);
+    setOnChainTxId(null);
     setMessage(apiStatus === "connected" ? "Requesting a backend ticket..." : "Issuing a local demo ticket...");
 
     try {
@@ -141,7 +146,8 @@ export default function Home() {
     }
 
     setIsProving(true);
-    setMessage("Running Aleo SDK local execution in a Web Worker...");
+    setOnChainTxId(null);
+    setMessage("Running local Aleo check before opening Leo Wallet...");
 
     try {
       const nextCounts = nextVoteCounts(proposal, choice);
@@ -153,6 +159,23 @@ export default function Home() {
       ]);
 
       setProofResult(output);
+      if (output !== "true") {
+        throw new Error(`Local Aleo execution rejected the vote: ${output}`);
+      }
+
+      setMessage("Open Leo Wallet and approve the testnet execution...");
+      const txId = await requestExecution(
+        Transaction.createTransaction(
+          publicKey,
+          WalletAdapterNetwork.Testnet,
+          programId,
+          "main",
+          [`${nextCounts.agreeVotes}u64`, `${nextCounts.disagreeVotes}u64`],
+          executionFeeMicrocredits,
+          false
+        )
+      );
+      setOnChainTxId(txId);
 
       if (apiStatus === "connected") {
         const serverReport = await readJson<VoteReport>(
@@ -169,9 +192,12 @@ export default function Home() {
           })
         );
 
-        setReport(serverReport);
+        setReport({
+          ...serverReport,
+          txId
+        });
         setProposal((current) => mergeReportTally(current, serverReport, nextCounts));
-        setMessage("Vote proof accepted and report stored by backend");
+        setMessage("Wallet execution submitted and backend report stored");
       } else {
         setReport({
           id: `report-${Date.now()}`,
@@ -179,7 +205,7 @@ export default function Home() {
           vote: choice,
           status: "verified",
           ticketCommitment: ticket.ticketCommitment,
-          txId: `demo-${crypto.randomUUID()}`,
+          txId,
           createdAt: new Date().toISOString()
         });
         setProposal((current) => ({
@@ -187,7 +213,7 @@ export default function Home() {
           agreeVotes: nextCounts.agreeVotes,
           disagreeVotes: nextCounts.disagreeVotes
         }));
-        setMessage("Vote proof accepted in local demo mode");
+        setMessage("Wallet execution submitted; tally updated locally because backend is offline");
       }
 
       setTicket(null);
@@ -216,9 +242,22 @@ export default function Home() {
           <LeoWalletButton />
           <Badge>
             <ShieldCheck size={16} />
-            {walletConnected ? (apiStatus === "connected" ? "wallet + backend + sdk" : "wallet + sdk demo") : "wallet required"}
+            {walletConnected ? (apiStatus === "connected" ? "wallet + on-chain + backend" : "wallet + on-chain") : "wallet required"}
           </Badge>
         </div>
+      </section>
+
+      <section className="mx-auto mb-6 grid max-w-6xl gap-3 md:grid-cols-3">
+        {[
+          ["1", walletConnected ? "Wallet connected" : "Connect Leo Wallet"],
+          ["2", ticket ? "Ticket ready" : "Issue ticket"],
+          ["3", onChainTxId ? "Execution submitted" : "Approve wallet execution"]
+        ].map(([step, label]) => (
+          <div key={step} className="flex items-center gap-3 rounded-md border border-stone-950 bg-white p-3">
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-[#d9ff65] text-sm font-black">{step}</span>
+            <strong className="text-sm">{label}</strong>
+          </div>
+        ))}
       </section>
 
       <section className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -311,6 +350,17 @@ export default function Home() {
                   <code className="mb-2 block [overflow-wrap:anywhere]">{report.id}</code>
                   <code className="mb-2 block [overflow-wrap:anywhere]">{report.txId}</code>
                   <code className="mb-3 block [overflow-wrap:anywhere]">private_vote.aleo/main =&gt; {proofResult}</code>
+                  {onChainTxId ? (
+                    <a
+                      className="mb-3 inline-flex items-center gap-2 text-sm font-black text-[#d9ff65] underline"
+                      href={`https://testnet.explorer.provable.com/transaction/${onChainTxId}`}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      View wallet execution
+                      <ExternalLink size={14} />
+                    </a>
+                  ) : null}
                   <span className="text-sm text-[#d9ff65]">
                     The vote was counted without exposing voter identity.
                   </span>
