@@ -9,6 +9,12 @@ import { Network, type Account, type TransactionOptions } from "@provablehq/aleo
 import { WalletDecryptPermission, WalletReadyState } from "@provablehq/aleo-wallet-standard";
 import { Wallet } from "lucide-react";
 import {
+  defaultWallets,
+  isReadyWallet,
+  mergeWalletOptions,
+  type WalletOption
+} from "@/wallet/walletOptions";
+import {
   createContext,
   useCallback,
   useContext,
@@ -21,12 +27,6 @@ import {
 import { Button } from "@/components/ui/button";
 
 const programId = "private_vote.aleo";
-
-type WalletOption = {
-  name: string;
-  readyState: WalletReadyState;
-  url?: string;
-};
 
 type AleoWalletContextValue = {
   account: Account | null;
@@ -72,21 +72,32 @@ function toWalletOptions(adapters: BaseAleoWalletAdapter[]): WalletOption[] {
   }));
 }
 
+function walletStatusLabel(wallet: WalletOption) {
+  if (isReadyWallet(wallet)) return "Installed";
+  if (wallet.readyState === WalletReadyState.UNSUPPORTED) return "Unsupported";
+  return "Not detected";
+}
+
+function walletActionLabel(wallet: WalletOption, connectingWallet: string | null) {
+  if (connectingWallet === wallet.name) return "Connecting...";
+  return isReadyWallet(wallet) ? `Connect ${wallet.name}` : `Install ${wallet.name}`;
+}
+
 export function AleoWalletProvider({ children }: { children: ReactNode }) {
   const adaptersRef = useRef<BaseAleoWalletAdapter[]>([]);
   const selectedAdapterRef = useRef<BaseAleoWalletAdapter | null>(null);
   const [account, setAccount] = useState<Account | null>(null);
   const [connectingWallet, setConnectingWallet] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [wallets, setWallets] = useState<WalletOption[]>([]);
+  const [wallets, setWallets] = useState<WalletOption[]>(defaultWallets);
 
   useEffect(() => {
     const adapters = createWalletAdapters();
     adaptersRef.current = adapters;
-    setWallets(toWalletOptions(adapters));
+    setWallets(mergeWalletOptions(toWalletOptions(adapters)));
 
     const refreshWallets = () => {
-      setWallets(toWalletOptions(adapters));
+      setWallets(mergeWalletOptions(toWalletOptions(adapters)));
     };
     const handleConnect = (connectedAccount: Account) => {
       setAccount(connectedAccount);
@@ -197,8 +208,7 @@ function formatAddress(address: string) {
 
 export function AleoWalletButton() {
   const { connected, connectingWallet, connect, disconnect, error, publicKey, wallets } = useAleoWallet();
-  const installedWallets = wallets.filter((item) => item.readyState === WalletReadyState.INSTALLED || item.readyState === WalletReadyState.LOADABLE);
-  const visibleWallets = installedWallets.length > 0 ? installedWallets : wallets;
+  const installedWallets = wallets.filter(isReadyWallet);
 
   if (connected && publicKey) {
     return (
@@ -213,22 +223,32 @@ export function AleoWalletButton() {
   }
 
   return (
-    <div className="flex max-w-sm flex-col items-start gap-2 md:items-end">
-      <div className="flex flex-wrap gap-2 md:justify-end">
-        {visibleWallets.map((wallet) => (
+    <div className="flex w-full max-w-xl flex-col items-start gap-2 md:items-end">
+      <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 md:w-auto md:min-w-[30rem]">
+        {wallets.map((wallet) => (
           <Button
             disabled={Boolean(connectingWallet)}
             key={wallet.name}
+            className="h-auto min-h-14 justify-between px-3 py-2 text-left"
             onClick={() => connect(wallet.name)}
-            variant={wallet.readyState === WalletReadyState.INSTALLED || wallet.readyState === WalletReadyState.LOADABLE ? "primary" : "default"}
+            variant={isReadyWallet(wallet) ? "primary" : "outline"}
           >
-            <Wallet size={16} />
-            {connectingWallet === wallet.name ? "Connecting..." : wallet.readyState === WalletReadyState.INSTALLED || wallet.readyState === WalletReadyState.LOADABLE ? `Connect ${wallet.name}` : wallet.name}
+            <span className="flex items-center gap-2">
+              <Wallet size={16} />
+              <span className="whitespace-nowrap">{walletActionLabel(wallet, connectingWallet)}</span>
+            </span>
+            <span className="rounded-sm border border-stone-950/20 bg-white/70 px-1.5 py-0.5 text-[10px] font-black uppercase text-stone-700">
+              {walletStatusLabel(wallet)}
+            </span>
           </Button>
         ))}
       </div>
       {error ? <span className="max-w-xs text-xs font-bold text-[#9f2d1d]">{error}</span> : null}
-      {installedWallets.length === 0 ? <span className="max-w-xs text-xs font-bold text-stone-700">Install Leo, Shield, Puzzle, or Fox Wallet to continue.</span> : null}
+      {installedWallets.length === 0 ? (
+        <span className="max-w-md text-xs font-bold text-stone-700">
+          Choose a wallet to install, then refresh this page after the extension is available.
+        </span>
+      ) : null}
     </div>
   );
 }

@@ -166,3 +166,13 @@
 - Updated `CONTRIBUTING.md` to define a production-grade quality bar instead of positioning the project as a Bootcamp MVP.
 - Added project guidance to keep wallet, backend, local demo, and on-chain state honest and user-verifiable.
 - Added review/refactor expectations for correctness, security, maintainability, explicit failure states, and focused tests.
+
+## 2026-06-09 Wallet Selector Customization
+
+- Kept official `@provablehq/aleo-wallet-adaptor-*` packages for wallet detection, connection, and transaction execution.
+- Added a React 19-compatible custom wallet selector that always shows Leo, Shield, Puzzle, and Fox Wallet before browser extension detection finishes.
+- Split wallet options into clear connect/install states so the DApp no longer looks empty when no wallet extension is detected.
+- Added Vitest coverage for wallet option merging and readiness handling.
+- Added `.vercelignore` after Vercel attempted to upload local dependency and build caches from the monorepo root.
+- Redeployed the frontend from `frontend/` after the root deployment failed to detect Next.js in the workspace shell package.
+- Vercel deployment `dpl_3Ye6CzELo3sNqqHPzBUwLX2w7naC` is Ready and `aleo-private-vote.vercel.app` points to `aleo-private-vote-fifcobpoj-qiaopengjuns-projects.vercel.app`.

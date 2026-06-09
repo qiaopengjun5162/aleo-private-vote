@@ -76,7 +76,7 @@ just frontend-dev
 ## 项目范围
 
 - 创建和展示投票提案。
-- 连接支持的 Aleo 钱包后签发票据和投票。
+- 连接 Leo、Shield、Puzzle 或 Fox Wallet 后签发票据和投票。
 - 发放私密投票票据。
 - 投赞成票或反对票。
 - 通过 Aleo 钱包广播 `private_vote.aleo/main` 测试网 execution。
@@ -106,6 +106,7 @@ just frontend-dev
 - 在 Web Worker 中运行 `initThreadPool()`。
 - 用 `ProgramManager.run()` 做本地执行，再展示验证报告。
 - 使用官方 `@provablehq/aleo-wallet-adaptor-*` 包接入钱包连接和 execution。
+- 使用自定义 React 19 兼容钱包选择器，在扩展探测完成前也稳定展示所有支持的钱包入口。
 - 本地 SDK 检查通过后，请求钱包广播测试网 execution。
 - 在 `next.config.ts` 配置 COOP / COEP 头，为 `SharedArrayBuffer` 提供支持。
 - 使用 `next build --webpack`，因为 Next 16 的 Turbopack 在当前沙箱里会尝试绑定本地端口并触发 `Operation not permitted`。
