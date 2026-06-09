@@ -83,6 +83,7 @@ just frontend-dev
 - 通过 Aleo 钱包广播 `private_vote.aleo/main` 测试网 execution。
 - 钱包批准前展示 execution request，包括 program、function、inputs、network 和 public fee。
 - 跟踪钱包提交后的 testnet transaction 状态：checking、pending、accepted 或 unavailable。
+- 在钱包授权 on-chain history 后，读取当前钱包里 `private_vote.aleo` 的交易历史。
 - 展示公开计票结果。
 - 生成本地验证报告用于演示。
 - 通过 TypeScript SDK 和 Rust snarkVM 客户端保留测试网执行入口。
@@ -98,7 +99,7 @@ just frontend-dev
 - `@provablehq/aleo-wallet-adaptor-fox`
 - `@provablehq/aleo-wallet-standard`
 
-这条路径连接浏览器钱包扩展，并通过选中 adapter 的 `executeTransaction()` API 请求测试网 execution。
+这条路径连接浏览器钱包扩展，并通过选中 adapter 的 `executeTransaction()` API 请求测试网 execution。连接钱包时会为 `private_vote.aleo` 请求 `WalletDecryptPermission.OnChainHistory`，这样前端可以调用 `requestTransactionHistory(programId)`，在 explorer 状态检查旁边展示钱包返回的 program-scoped 交易历史。
 
 前端也接入了基于 `@dynamic-labs/sdk-react-core` 和 `@dynamic-labs/aleo` 的可选 Dynamic 嵌入式钱包。它默认关闭。只有在 Dynamic dashboard 创建并验证真实环境后，才设置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`：
 
@@ -141,6 +142,7 @@ NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @al
 - 未配置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` 时，Dynamic 选项保持禁用。
 - 展示准确的钱包 execution request，并跟踪本地检查、钱包批准、已提交和失败状态。
 - 本地 SDK 检查通过后，请求钱包广播测试网 execution。
+- 请求钱包 on-chain history 权限，并通过 `requestTransactionHistory()` 提供 `private_vote.aleo` 交易历史刷新。
 - 钱包返回交易 id 后，轮询同源 `/api/testnet/transactions/:txId` route，避免浏览器直接跨域依赖 Provable API。
 - 在 `next.config.ts` 配置 COOP / COEP 头，为 `SharedArrayBuffer` 提供支持。
 - 使用 `next build --webpack`，因为 Next 16 的 Turbopack 在当前沙箱里会尝试绑定本地端口并触发 `Operation not permitted`。

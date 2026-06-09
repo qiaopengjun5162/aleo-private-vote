@@ -26,6 +26,10 @@ import {
   type ReactNode
 } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  normalizeWalletTransactionHistory,
+  type WalletTransactionHistoryEntry
+} from "@/walletTransactionHistory";
 
 const programId = "private_vote.aleo";
 
@@ -39,6 +43,7 @@ type AleoWalletContextValue = {
   connect: (walletName: string) => Promise<boolean>;
   disconnect: () => Promise<void>;
   executeTransaction: (options: TransactionOptions) => Promise<string>;
+  requestTransactionHistory: (program?: string) => Promise<WalletTransactionHistoryEntry[]>;
 };
 
 const AleoWalletContext = createContext<AleoWalletContextValue | null>(null);
@@ -151,7 +156,7 @@ export function AleoWalletProvider({ children }: { children: ReactNode }) {
     setConnectingWallet(adapter.name);
     setError(null);
     try {
-      const connectedAccount = await adapter.connect(Network.TESTNET, WalletDecryptPermission.NoDecrypt, [programId]);
+      const connectedAccount = await adapter.connect(Network.TESTNET, WalletDecryptPermission.OnChainHistory, [programId]);
       selectedAdapterRef.current = adapter;
       setAccount(connectedAccount);
       return true;
@@ -185,6 +190,16 @@ export function AleoWalletProvider({ children }: { children: ReactNode }) {
     return result.transactionId;
   }, []);
 
+  const requestTransactionHistory = useCallback(async (program = programId) => {
+    const adapter = selectedAdapterRef.current;
+    if (!adapter || !adapter.connected) {
+      throw new Error("Aleo wallet is not connected.");
+    }
+
+    const result = await adapter.requestTransactionHistory(program);
+    return normalizeWalletTransactionHistory(result.transactions);
+  }, []);
+
   const value = useMemo(
     () => ({
       account,
@@ -195,9 +210,10 @@ export function AleoWalletProvider({ children }: { children: ReactNode }) {
       wallets,
       connect,
       disconnect,
-      executeTransaction
+      executeTransaction,
+      requestTransactionHistory
     }),
-    [account, connectingWallet, error, wallets, connect, disconnect, executeTransaction]
+    [account, connectingWallet, error, wallets, connect, disconnect, executeTransaction, requestTransactionHistory]
   );
 
   return <AleoWalletContext.Provider value={value}>{children}</AleoWalletContext.Provider>;
