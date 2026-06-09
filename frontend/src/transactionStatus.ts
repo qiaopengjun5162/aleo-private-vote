@@ -13,6 +13,12 @@ export type TestnetTransactionStatusResponse = TestnetTransactionDetails & {
   checkedAt: string;
 };
 
+export type WalletTransactionStatusLike = {
+  status?: string;
+  transactionId?: string;
+  error?: string;
+};
+
 export const transactionStatusLabels: Record<TestnetTransactionStatus, string> = {
   checking: "Checking testnet status",
   pending: "Waiting for testnet confirmation",
@@ -41,4 +47,34 @@ export function parseTestnetTransaction(payload: unknown): TestnetTransactionDet
     program: typeof transition?.program === "string" ? transition.program : undefined,
     functionName: typeof transition?.function === "string" ? transition.function : undefined
   };
+}
+
+export function isAleoTransactionId(value: string | null | undefined): value is string {
+  return typeof value === "string" && /^at1[0-9a-z]+$/i.test(value);
+}
+
+export function resolveOnChainTransactionId(
+  walletExecutionId: string | null,
+  walletStatus: WalletTransactionStatusLike | null
+): string | null {
+  if (isAleoTransactionId(walletStatus?.transactionId)) return walletStatus.transactionId;
+  if (isAleoTransactionId(walletExecutionId)) return walletExecutionId;
+  return null;
+}
+
+export function walletExecutionStatusLabel(status: string | undefined): string {
+  if (!status) return "Submitted to wallet";
+
+  const normalized = status.toLowerCase();
+  if (normalized.includes("accept") || normalized.includes("complete") || normalized.includes("success")) {
+    return "Wallet resolved on-chain id";
+  }
+  if (normalized.includes("fail") || normalized.includes("reject") || normalized.includes("error")) {
+    return "Wallet execution failed";
+  }
+  if (normalized.includes("pending") || normalized.includes("submit") || normalized.includes("process")) {
+    return "Wallet execution pending";
+  }
+
+  return status;
 }

@@ -6,7 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { transactionStatusLabels, type TestnetTransactionStatusResponse } from "@/transactionStatus";
+import {
+  isAleoTransactionId,
+  resolveOnChainTransactionId,
+  transactionStatusLabels,
+  walletExecutionStatusLabel,
+  type TestnetTransactionStatusResponse,
+  type WalletTransactionStatusLike
+} from "@/transactionStatus";
 import { AleoWalletButton, useAleoWallet } from "@/wallet/AleoWalletProvider";
 import { type WalletTransactionHistoryEntry } from "@/walletTransactionHistory";
 import { AleoWorker } from "@/workers/AleoWorker";
@@ -30,6 +37,8 @@ const executionFeeLabel = "35,000 public fee units";
 const testnetExplorerBaseUrl = "https://testnet.explorer.provable.com/transaction";
 const transactionStatusPollIntervalMs = 5_000;
 const transactionStatusMaxChecks = 24;
+const walletStatusPollIntervalMs = 5_000;
+const walletStatusMaxChecks = 24;
 
 type ExecutionStatus = "idle" | "local-check" | "wallet-approval" | "submitted" | "failed";
 type WalletHistoryStatus = "idle" | "loading" | "loaded" | "failed";
@@ -64,7 +73,8 @@ export default function Home() {
     connected: walletConnected,
     executeTransaction,
     publicKey,
-    requestTransactionHistory
+    requestTransactionHistory,
+    transactionStatus: checkWalletTransactionStatus
   } = useAleoWallet();
   const [proposal, setProposal] = useState<Proposal>(fallbackProposal);
   const [ticket, setTicket] = useState<TicketReceipt | null>(null);
@@ -75,9 +85,12 @@ export default function Home() {
   const [message, setMessage] = useState<string>("Loading backend proposal...");
   const [isIssuing, setIsIssuing] = useState(false);
   const [isProving, setIsProving] = useState(false);
+  const [walletExecutionId, setWalletExecutionId] = useState<string | null>(null);
+  const [walletAdapterStatus, setWalletAdapterStatus] = useState<WalletTransactionStatusLike | null>(null);
+  const [walletStatusMessage, setWalletStatusMessage] = useState("Wallet execution status is available after approval.");
   const [onChainTxId, setOnChainTxId] = useState<string | null>(null);
   const [executionStatus, setExecutionStatus] = useState<ExecutionStatus>("idle");
-  const [transactionStatus, setTransactionStatus] = useState<TestnetTransactionStatusResponse | null>(null);
+  const [testnetTransactionStatus, setTestnetTransactionStatus] = useState<TestnetTransactionStatusResponse | null>(null);
   const [walletHistory, setWalletHistory] = useState<WalletTransactionHistoryEntry[]>([]);
   const [walletHistoryStatus, setWalletHistoryStatus] = useState<WalletHistoryStatus>("idle");
   const [walletHistoryMessage, setWalletHistoryMessage] = useState("Connect a wallet to load private_vote.aleo history.");
@@ -110,7 +123,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!onChainTxId) {
-      setTransactionStatus(null);
+      setTestnetTransactionStatus(null);
       return;
     }
 
@@ -119,7 +132,7 @@ export default function Home() {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     async function checkTransaction(attempt: number) {
-      setTransactionStatus((current) =>
+      setTestnetTransactionStatus((current) =>
         current?.status === "accepted"
           ? current
           : {
@@ -138,14 +151,14 @@ export default function Home() {
         );
         if (cancelled) return;
 
-        setTransactionStatus(status);
+        setTestnetTransactionStatus(status);
         if (status.status === "accepted" || attempt >= transactionStatusMaxChecks) {
           return;
         }
       } catch (error) {
         if (cancelled) return;
 
-        setTransactionStatus({
+        setTestnetTransactionStatus({
           txId: trackedTxId,
           status: "unavailable",
           message: error instanceof Error ? error.message : "Unable to check transaction status.",
@@ -166,6 +179,83 @@ export default function Home() {
       }
     };
   }, [onChainTxId]);
+
+  useEffect(() => {
+    if (!walletExecutionId) {
+      setWalletAdapterStatus(null);
+      setWalletStatusMessage("Wallet execution status is available after approval.");
+      setOnChainTxId(null);
+      return;
+    }
+
+    const trackedWalletExecutionId = walletExecutionId;
+    const immediateOnChainTxId = isAleoTransactionId(trackedWalletExecutionId) ? trackedWalletExecutionId : null;
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    setWalletAdapterStatus({
+      status: "submitted",
+      transactionId: immediateOnChainTxId ?? undefined
+    });
+    setWalletStatusMessage(
+      immediateOnChainTxId
+        ? "The wallet returned an on-chain transaction id."
+        : "The wallet returned a temporary execution id. Resolving the on-chain transaction id..."
+    );
+    setOnChainTxId(immediateOnChainTxId);
+
+    async function checkWalletStatus(attempt: number) {
+      try {
+        const status = await checkWalletTransactionStatus(trackedWalletExecutionId);
+        if (cancelled) return;
+
+        setWalletAdapterStatus(status);
+        const resolvedOnChainTxId = resolveOnChainTransactionId(trackedWalletExecutionId, status);
+        if (resolvedOnChainTxId) {
+          setOnChainTxId(resolvedOnChainTxId);
+        }
+
+        setWalletStatusMessage(
+          status.error ??
+            (resolvedOnChainTxId
+              ? "Wallet status resolved the on-chain transaction id."
+              : attempt >= walletStatusMaxChecks
+                ? "Wallet status did not return an on-chain transaction id before polling stopped."
+                : "Waiting for the wallet to resolve the on-chain transaction id.")
+        );
+
+        const normalizedStatus = status.status?.toLowerCase() ?? "";
+        const isFinalStatus =
+          normalizedStatus.includes("accept") ||
+          normalizedStatus.includes("complete") ||
+          normalizedStatus.includes("success") ||
+          normalizedStatus.includes("fail") ||
+          normalizedStatus.includes("reject") ||
+          normalizedStatus.includes("error");
+        if (resolvedOnChainTxId || isFinalStatus || attempt >= walletStatusMaxChecks) {
+          return;
+        }
+      } catch (error) {
+        if (cancelled) return;
+
+        setWalletStatusMessage(
+          error instanceof Error ? error.message : "Unable to check wallet execution status."
+        );
+        return;
+      }
+
+      timeoutId = setTimeout(() => void checkWalletStatus(attempt + 1), walletStatusPollIntervalMs);
+    }
+
+    void checkWalletStatus(1);
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [walletExecutionId, checkWalletTransactionStatus]);
 
   useEffect(() => {
     if (walletConnected) {
@@ -223,8 +313,11 @@ export default function Home() {
 
     setIsIssuing(true);
     setReport(null);
+    setWalletExecutionId(null);
+    setWalletAdapterStatus(null);
+    setWalletStatusMessage("Wallet execution status is available after approval.");
     setOnChainTxId(null);
-    setTransactionStatus(null);
+    setTestnetTransactionStatus(null);
     setExecutionStatus("idle");
     setMessage(apiStatus === "connected" ? "Requesting a backend ticket..." : "Issuing a local demo ticket...");
 
@@ -277,8 +370,11 @@ export default function Home() {
     }
 
     setIsProving(true);
+    setWalletExecutionId(null);
+    setWalletAdapterStatus(null);
+    setWalletStatusMessage("Wallet execution status is available after approval.");
     setOnChainTxId(null);
-    setTransactionStatus(null);
+    setTestnetTransactionStatus(null);
     setExecutionStatus("local-check");
     setMessage("Running local Aleo check before opening your wallet...");
 
@@ -294,14 +390,15 @@ export default function Home() {
 
       setExecutionStatus("wallet-approval");
       setMessage("Open your Aleo wallet and approve the testnet execution...");
-      const txId = await executeTransaction({
+      const walletTxId = await executeTransaction({
         program: programId,
         function: executionFunction,
         inputs: plannedExecutionInputs,
         fee: executionFee,
         privateFee: false
       });
-      setOnChainTxId(txId);
+      setWalletExecutionId(walletTxId);
+      const reportTxId = walletTxId;
       setExecutionStatus("submitted");
       void loadWalletTransactionHistory();
 
@@ -322,7 +419,7 @@ export default function Home() {
 
         setReport({
           ...serverReport,
-          txId
+          txId: reportTxId
         });
         setProposal((current) => mergeReportTally(current, serverReport, plannedVoteCounts));
         setMessage("Wallet execution submitted and backend report stored");
@@ -333,7 +430,7 @@ export default function Home() {
           vote: choice,
           status: "verified",
           ticketCommitment: ticket.ticketCommitment,
-          txId,
+          txId: reportTxId,
           createdAt: new Date().toISOString()
         });
         setProposal((current) => ({
@@ -380,7 +477,16 @@ export default function Home() {
         {[
           ["1", walletConnected ? "Wallet connected" : "Connect Aleo wallet"],
           ["2", ticket ? "Ticket ready" : "Issue ticket"],
-          ["3", transactionStatus?.status === "accepted" ? "Execution accepted" : onChainTxId ? "Execution submitted" : "Approve wallet execution"]
+          [
+            "3",
+            testnetTransactionStatus?.status === "accepted"
+              ? "Execution accepted"
+              : onChainTxId
+                ? "Checking testnet status"
+                : walletExecutionId
+                  ? "Wallet execution submitted"
+                  : "Approve wallet execution"
+          ]
         ].map(([step, label]) => (
           <div key={step} className="flex items-center gap-3 rounded-md border border-stone-950 bg-white p-3">
             <span className="grid h-8 w-8 place-items-center rounded-full bg-[#d9ff65] text-sm font-black">{step}</span>
@@ -478,27 +584,59 @@ export default function Home() {
               <p className="mt-3 text-xs font-bold text-stone-600">
                 The wallet request uses a public fee and asks the connected wallet to execute the deployed verifier.
               </p>
+              {walletExecutionId ? (
+                <div className="mt-4 rounded-md border border-stone-950 bg-[#f4e4cf] p-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs font-black uppercase text-[#6f3d2f]">Wallet execution status</p>
+                      <strong className="mt-1 block text-sm">
+                        {walletExecutionStatusLabel(walletAdapterStatus?.status)}
+                      </strong>
+                    </div>
+                    <span className="w-fit rounded-sm border border-stone-950 bg-white px-2 py-1 text-xs font-black uppercase">
+                      {onChainTxId ? "on-chain id" : "wallet id"}
+                    </span>
+                  </div>
+                  <dl className="mt-3 grid gap-2 text-xs">
+                    <div>
+                      <dt className="font-bold text-stone-600">Wallet execution id</dt>
+                      <dd className="font-mono text-stone-800 [overflow-wrap:anywhere]">{walletExecutionId}</dd>
+                    </div>
+                    {walletAdapterStatus?.transactionId && walletAdapterStatus.transactionId !== walletExecutionId ? (
+                      <div>
+                        <dt className="font-bold text-stone-600">Resolved transaction id</dt>
+                        <dd className="font-mono text-stone-800 [overflow-wrap:anywhere]">
+                          {walletAdapterStatus.transactionId}
+                        </dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                  <p className="mt-2 text-xs font-bold text-stone-600">{walletStatusMessage}</p>
+                </div>
+              ) : null}
               {onChainTxId ? (
                 <div className="mt-4 rounded-md border border-stone-950 bg-[#eef0e8] p-3">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-xs font-black uppercase text-[#6f3d2f]">Testnet transaction status</p>
                       <strong className="mt-1 block text-sm">
-                        {transactionStatus ? transactionStatusLabels[transactionStatus.status] : "Checking testnet status"}
+                        {testnetTransactionStatus
+                          ? transactionStatusLabels[testnetTransactionStatus.status]
+                          : "Checking testnet status"}
                       </strong>
                     </div>
-                    {transactionStatus?.type ? (
+                    {testnetTransactionStatus?.type ? (
                       <span className="w-fit rounded-sm border border-stone-950 bg-white px-2 py-1 text-xs font-black uppercase">
-                        {transactionStatus.type}
+                        {testnetTransactionStatus.type}
                       </span>
                     ) : null}
                   </div>
                   <p className="mt-2 text-xs font-bold text-stone-600">
-                    {transactionStatus?.message ?? "Checking the transaction against the testnet API."}
+                    {testnetTransactionStatus?.message ?? "Checking the transaction against the testnet API."}
                   </p>
-                  {transactionStatus?.program || transactionStatus?.functionName ? (
+                  {testnetTransactionStatus?.program || testnetTransactionStatus?.functionName ? (
                     <p className="mt-2 font-mono text-xs text-stone-700 [overflow-wrap:anywhere]">
-                      {[transactionStatus.program, transactionStatus.functionName].filter(Boolean).join("/")}
+                      {[testnetTransactionStatus.program, testnetTransactionStatus.functionName].filter(Boolean).join("/")}
                     </p>
                   ) : null}
                   <a

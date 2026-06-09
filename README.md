@@ -192,7 +192,7 @@ The default production path uses the official wallet adapter packages from `Prov
 - `@provablehq/aleo-wallet-adaptor-fox`
 - `@provablehq/aleo-wallet-standard`
 
-This path connects browser wallet extensions and uses the selected adapter's `executeTransaction()` API for the testnet execution request. The connection asks for `WalletDecryptPermission.OnChainHistory` for `private_vote.aleo` so the app can call `requestTransactionHistory(programId)` and show wallet-scoped transaction history beside the explorer status check.
+This path connects browser wallet extensions and uses the selected adapter's `executeTransaction()` API for the testnet execution request. Because wallet adapters may return a temporary execution id first, the frontend calls `transactionStatus(walletExecutionId)` to resolve the on-chain `transactionId` before opening Explorer links or checking testnet acceptance. The connection asks for `WalletDecryptPermission.OnChainHistory` for `private_vote.aleo` so the app can call `requestTransactionHistory(programId)` and show wallet-scoped transaction history beside the explorer status check.
 
 The frontend also includes optional Dynamic embedded wallet support through `@dynamic-labs/sdk-react-core` and `@dynamic-labs/aleo`. It is disabled by default. Set `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` only after creating and validating a real Dynamic environment in the Dynamic dashboard:
 
@@ -235,6 +235,7 @@ The frontend now uses Next.js App Router, React, Tailwind CSS, and local shadcn/
 - Keep the Dynamic option disabled unless `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is configured.
 - Show the exact wallet execution request and track local check, wallet approval, submitted, and failed states.
 - Request wallet testnet execution after the local SDK check succeeds.
+- Resolve wallet-returned temporary execution ids through `transactionStatus()` before treating them as on-chain transaction ids.
 - Request wallet on-chain history permission and expose a manual `private_vote.aleo` transaction history refresh through `requestTransactionHistory()`.
 - Poll the same-origin `/api/testnet/transactions/:txId` route after wallet submission so the browser does not depend on direct cross-origin access to the Provable API.
 - Set `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` in `next.config.ts` for `SharedArrayBuffer` support.
