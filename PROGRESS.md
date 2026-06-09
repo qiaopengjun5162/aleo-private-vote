@@ -302,3 +302,6 @@
 - Verified `just check`: Leo tests, backend typecheck/test/build, frontend typecheck/test/build, client-ts typecheck/build, and client-rust cargo check passed.
 - Verified local production smoke with `next start`: HTTP 200, desktop DOM contains `Aleo Private Vote`, `Reset local`, `Local workspace`, and `Proposal room`; console error log was empty.
 - Verified mobile 390px smoke: no horizontal overflow, `Reset local` renders once, and console error log was empty.
+- PR #15 was merged into `main`, and main CI run `27220532446` passed at merge commit `9c55d2968fcd157a98ec2f145e74cfc6638dbcc7`.
+- Vercel deployment `dpl_56mfMarr7CiLXDe6mUaBTY4NBHgd` is Ready.
+- `aleo-private-vote.vercel.app` points to `aleo-private-vote-anfs8bm4c-qiaopengjuns-projects.vercel.app`.
