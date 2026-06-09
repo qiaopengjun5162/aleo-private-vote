@@ -32,6 +32,7 @@ Voting is a natural privacy use case: voters should be able to cast a choice wit
 - Privacy-oriented voting model with proposal, ticket, and vote records in Leo.
 - Local Aleo SDK execution in a browser Web Worker before wallet approval.
 - Testnet wallet execution for `private_vote.aleo/main`.
+- Same-origin testnet transaction status checks after wallet submission.
 - Official Aleo wallet adapter support for Leo, Shield, Puzzle, and Fox Wallet.
 - Optional Dynamic embedded Aleo wallet entry, gated by `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`.
 - Backend API for demo proposals, private ticket commitments, and verification reports.
@@ -173,6 +174,7 @@ The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUB
 - Cast agree or disagree votes.
 - Submit an Aleo wallet testnet execution for `private_vote.aleo/main`.
 - Preview the wallet execution request before approval, including program, function, inputs, network, and public fee.
+- Track submitted wallet transactions as checking, pending, accepted, or unavailable.
 - Show public vote tallies.
 - Generate a local verification report for the demo.
 - Keep testnet execution available through both TypeScript SDK and Rust snarkVM clients.
@@ -205,6 +207,12 @@ When this variable is missing, the embedded wallet provider and button are not r
 - `POST /api/tickets`: issue a private ticket commitment for a proposal.
 - `POST /api/reports`: store a verified demo vote report and return the updated tally.
 
+## Frontend API Routes
+
+- `GET /api/testnet/transactions/:txId`: query the Provable testnet API for a submitted transaction and normalize it into `checking`, `pending`, `accepted`, or `unavailable`.
+
+`ALEO_TESTNET_API_URL` can override the default `https://api.provable.com/v2/testnet` endpoint for this route.
+
 ## Testing
 
 - Leo tests cover the voting rule in `leo/private_vote/tests`.
@@ -224,6 +232,7 @@ The frontend now uses Next.js App Router, React, Tailwind CSS, and local shadcn/
 - Load Dynamic embedded wallet UI only when `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is configured.
 - Show the exact wallet execution request and track local check, wallet approval, submitted, and failed states.
 - Request wallet testnet execution after the local SDK check succeeds.
+- Poll the same-origin `/api/testnet/transactions/:txId` route after wallet submission so the browser does not depend on direct cross-origin access to the Provable API.
 - Set `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` in `next.config.ts` for `SharedArrayBuffer` support.
 - Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox.
 - Keep `frontend/public/programs/private_vote.aleo` in sync with `leo/private_vote/build/main.aleo` after Leo program changes.
@@ -264,7 +273,7 @@ This project is intentionally kept small, but it should still behave like a trus
 - Move browser voting from the lightweight `main` verifier to the full record-based `new_ticket`, `agree`, and `disagree` flow.
 - Read proposal state and tallies from chain data instead of local demo state whenever possible.
 - Deploy the backend API with persistent storage, rate limits, and health checks.
-- Track wallet-submitted transactions through pending, accepted, and failed states.
+- Persist wallet-submitted transaction status history instead of keeping it only in browser state.
 - Add clear recovery paths for rejected wallet signatures, insufficient fee balance, failed broadcasts, and unavailable wallet extensions.
 - Add end-to-end tests for connect wallet, issue ticket, approve execution, and Explorer-link display.
 

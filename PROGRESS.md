@@ -202,3 +202,11 @@
 - Added Overview, Features, Quick Start, Installation, Usage, Requirements, and Project Structure sections.
 - Kept the all-contributors badge, Contributors table, and `.all-contributorsrc` convention intact for PR-based contribution attribution.
 - Added AGENTS guidance to preserve the README structure and all-contributors markers.
+
+## 2026-06-09 Wallet Transaction Status
+
+- Added a same-origin Next API route at `/api/testnet/transactions/[txId]` to query Provable testnet transaction status.
+- Normalized wallet-submitted transaction status into checking, pending, accepted, and unavailable states.
+- Added frontend polling after the wallet returns a transaction id and displayed accepted transaction details in the execution panel.
+- Added Vitest coverage for transaction status payload parsing and UI labels.
+- Verified the route locally with the known interaction tx `at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`, which returned accepted `private_vote.aleo/main`.
