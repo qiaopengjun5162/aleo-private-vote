@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { transactionStatusLabels, type TestnetTransactionStatusResponse } from "@/transactionStatus";
 import { AleoWalletButton, useAleoWallet } from "@/wallet/AleoWalletProvider";
 import { EmbeddedWalletButton } from "@/wallet/EmbeddedWalletButton";
 import { AleoWorker } from "@/workers/AleoWorker";
@@ -18,7 +19,7 @@ import {
   type Proposal,
   type TicketReceipt,
   type VoteChoice,
-type VoteReport
+  type VoteReport
 } from "@/voteFlow";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8787";
@@ -27,6 +28,8 @@ const executionFunction = "main";
 const executionFee = 35_000;
 const executionFeeLabel = "35,000 public fee units";
 const testnetExplorerBaseUrl = "https://testnet.explorer.provable.com/transaction";
+const transactionStatusPollIntervalMs = 5_000;
+const transactionStatusMaxChecks = 24;
 
 type ExecutionStatus = "idle" | "local-check" | "wallet-approval" | "submitted" | "failed";
 
@@ -68,6 +71,7 @@ export default function Home() {
   const [isProving, setIsProving] = useState(false);
   const [onChainTxId, setOnChainTxId] = useState<string | null>(null);
   const [executionStatus, setExecutionStatus] = useState<ExecutionStatus>("idle");
+  const [transactionStatus, setTransactionStatus] = useState<TestnetTransactionStatusResponse | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,6 +99,65 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!onChainTxId) {
+      setTransactionStatus(null);
+      return;
+    }
+
+    const trackedTxId = onChainTxId;
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    async function checkTransaction(attempt: number) {
+      setTransactionStatus((current) =>
+        current?.status === "accepted"
+          ? current
+          : {
+              txId: trackedTxId,
+              status: "checking",
+              message: "Checking the transaction against the testnet API.",
+              checkedAt: new Date().toISOString()
+            }
+      );
+
+      try {
+        const status = await readJson<TestnetTransactionStatusResponse>(
+          await fetch(`/api/testnet/transactions/${trackedTxId}`, {
+            cache: "no-store"
+          })
+        );
+        if (cancelled) return;
+
+        setTransactionStatus(status);
+        if (status.status === "accepted" || attempt >= transactionStatusMaxChecks) {
+          return;
+        }
+      } catch (error) {
+        if (cancelled) return;
+
+        setTransactionStatus({
+          txId: trackedTxId,
+          status: "unavailable",
+          message: error instanceof Error ? error.message : "Unable to check transaction status.",
+          checkedAt: new Date().toISOString()
+        });
+        return;
+      }
+
+      timeoutId = setTimeout(() => void checkTransaction(attempt + 1), transactionStatusPollIntervalMs);
+    }
+
+    void checkTransaction(1);
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [onChainTxId]);
+
   const agreePercent = useMemo(
     () => calculateAgreePercent(proposal.agreeVotes, proposal.disagreeVotes),
     [proposal.agreeVotes, proposal.disagreeVotes]
@@ -114,6 +177,7 @@ export default function Home() {
     setIsIssuing(true);
     setReport(null);
     setOnChainTxId(null);
+    setTransactionStatus(null);
     setExecutionStatus("idle");
     setMessage(apiStatus === "connected" ? "Requesting a backend ticket..." : "Issuing a local demo ticket...");
 
@@ -167,6 +231,7 @@ export default function Home() {
 
     setIsProving(true);
     setOnChainTxId(null);
+    setTransactionStatus(null);
     setExecutionStatus("local-check");
     setMessage("Running local Aleo check before opening your wallet...");
 
@@ -268,7 +333,7 @@ export default function Home() {
         {[
           ["1", walletConnected ? "Wallet connected" : "Connect Aleo wallet"],
           ["2", ticket ? "Ticket ready" : "Issue ticket"],
-          ["3", onChainTxId ? "Execution submitted" : "Approve wallet execution"]
+          ["3", transactionStatus?.status === "accepted" ? "Execution accepted" : onChainTxId ? "Execution submitted" : "Approve wallet execution"]
         ].map(([step, label]) => (
           <div key={step} className="flex items-center gap-3 rounded-md border border-stone-950 bg-white p-3">
             <span className="grid h-8 w-8 place-items-center rounded-full bg-[#d9ff65] text-sm font-black">{step}</span>
@@ -367,15 +432,38 @@ export default function Home() {
                 The wallet request uses a public fee and asks the connected wallet to execute the deployed verifier.
               </p>
               {onChainTxId ? (
-                <a
-                  className="mt-3 inline-flex items-center gap-2 text-sm font-black text-[#6f3d2f] underline"
-                  href={`${testnetExplorerBaseUrl}/${onChainTxId}`}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  View submitted execution
-                  <ExternalLink size={14} />
-                </a>
+                <div className="mt-4 rounded-md border border-stone-950 bg-[#eef0e8] p-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs font-black uppercase text-[#6f3d2f]">Testnet transaction status</p>
+                      <strong className="mt-1 block text-sm">
+                        {transactionStatus ? transactionStatusLabels[transactionStatus.status] : "Checking testnet status"}
+                      </strong>
+                    </div>
+                    {transactionStatus?.type ? (
+                      <span className="w-fit rounded-sm border border-stone-950 bg-white px-2 py-1 text-xs font-black uppercase">
+                        {transactionStatus.type}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-2 text-xs font-bold text-stone-600">
+                    {transactionStatus?.message ?? "Checking the transaction against the testnet API."}
+                  </p>
+                  {transactionStatus?.program || transactionStatus?.functionName ? (
+                    <p className="mt-2 font-mono text-xs text-stone-700 [overflow-wrap:anywhere]">
+                      {[transactionStatus.program, transactionStatus.functionName].filter(Boolean).join("/")}
+                    </p>
+                  ) : null}
+                  <a
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-black text-[#6f3d2f] underline"
+                    href={`${testnetExplorerBaseUrl}/${onChainTxId}`}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    View submitted execution
+                    <ExternalLink size={14} />
+                  </a>
+                </div>
               ) : null}
             </div>
           </CardContent>

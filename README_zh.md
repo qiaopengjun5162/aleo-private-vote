@@ -82,6 +82,7 @@ just frontend-dev
 - 投赞成票或反对票。
 - 通过 Aleo 钱包广播 `private_vote.aleo/main` 测试网 execution。
 - 钱包批准前展示 execution request，包括 program、function、inputs、network 和 public fee。
+- 跟踪钱包提交后的 testnet transaction 状态：checking、pending、accepted 或 unavailable。
 - 展示公开计票结果。
 - 生成本地验证报告用于演示。
 - 通过 TypeScript SDK 和 Rust snarkVM 客户端保留测试网执行入口。
@@ -114,6 +115,12 @@ NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @al
 - `POST /api/tickets`：为提案签发一个私密票据 commitment。
 - `POST /api/reports`：保存验证报告，并返回更新后的计票结果。
 
+## 前端 API Routes
+
+- `GET /api/testnet/transactions/:txId`：查询 Provable testnet API 中的钱包提交交易，并统一返回 `checking`、`pending`、`accepted` 或 `unavailable`。
+
+这个 route 默认使用 `https://api.provable.com/v2/testnet`，可以通过 `ALEO_TESTNET_API_URL` 覆盖。
+
 ## 测试
 
 - Leo tests 覆盖合约投票规则。
@@ -133,6 +140,7 @@ NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @al
 - 仅在配置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` 后加载 Dynamic 嵌入式钱包 UI。
 - 展示准确的钱包 execution request，并跟踪本地检查、钱包批准、已提交和失败状态。
 - 本地 SDK 检查通过后，请求钱包广播测试网 execution。
+- 钱包返回交易 id 后，轮询同源 `/api/testnet/transactions/:txId` route，避免浏览器直接跨域依赖 Provable API。
 - 在 `next.config.ts` 配置 COOP / COEP 头，为 `SharedArrayBuffer` 提供支持。
 - 使用 `next build --webpack`，因为 Next 16 的 Turbopack 在当前沙箱里会尝试绑定本地端口并触发 `Operation not permitted`。
 - Leo 程序变化后，需要把 `leo/private_vote/build/main.aleo` 同步到 `frontend/public/programs/private_vote.aleo`。
@@ -173,7 +181,7 @@ Rust 客户端参考当前目录里已经调通的 `hello/client-rust` 项目：
 - 把浏览器投票从轻量 `main` 验证函数升级到完整 record 驱动的 `new_ticket`、`agree`、`disagree` 流程。
 - 尽可能从链上数据读取提案状态和计票结果，而不是依赖本地 demo 状态。
 - 部署带持久化存储、限流和健康检查的后端 API。
-- 跟踪钱包提交交易的 pending、accepted、failed 状态。
+- 持久化钱包提交交易的状态历史，而不是只保存在浏览器状态里。
 - 为用户拒签、手续费不足、广播失败、钱包扩展不可用等情况提供清楚的恢复路径。
 - 增加端到端测试，覆盖连接钱包、签发票据、批准 execution 和 Explorer 链接展示。
 
