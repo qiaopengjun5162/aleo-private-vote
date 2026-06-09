@@ -101,3 +101,5 @@
 - Interaction transaction: `at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`.
 - Interaction fee transaction: `at1emyt5a88hx6gl2rfzrz096z443suwsahrdhfl4p27kxtx5mw6g9sq469ce`.
 - Confirmed the interaction transaction was accepted and returned local plaintext output `true`; the public API shows the private boolean output as ciphertext.
+- Captured the Explorer interaction screenshot at `screenshots/testnet-interaction.png`.
+- Added `TASK4_SUBMISSION.md` with the deployment transaction, interaction transaction, explorer links, and screenshot path.
