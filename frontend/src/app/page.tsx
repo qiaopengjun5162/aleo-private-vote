@@ -1,11 +1,23 @@
 "use client";
 
-import { CheckCircle2, ExternalLink, Fingerprint, History, KeyRound, RefreshCw, ShieldCheck, Ticket, Vote } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Fingerprint,
+  History,
+  KeyRound,
+  RefreshCw,
+  ShieldCheck,
+  Ticket,
+  Vote
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { createRecoveryNotice, type RecoveryNotice } from "@/recovery";
 import {
   isAleoTransactionId,
   resolveOnChainTransactionId,
@@ -65,6 +77,12 @@ const executionStatusLabels: Record<ExecutionStatus, string> = {
   failed: "Execution failed"
 };
 
+const recoveryToneClasses: Record<RecoveryNotice["tone"], string> = {
+  danger: "border-[#9f2d1d] bg-[#f4c8be]",
+  info: "border-stone-950 bg-[#eef0e8]",
+  warning: "border-stone-950 bg-[#f4e4cf]"
+};
+
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status}`);
@@ -85,6 +103,7 @@ async function readProgram() {
 export default function Home() {
   const {
     connected: walletConnected,
+    error: walletError,
     executeTransaction,
     publicKey,
     requestTransactionHistory,
@@ -112,6 +131,7 @@ export default function Home() {
   const [walletSignatureStatus, setWalletSignatureStatus] = useState<WalletSignatureStatus>("idle");
   const [walletSignatureProof, setWalletSignatureProof] = useState<WalletSignatureProof | null>(null);
   const [walletSignatureMessage, setWalletSignatureMessage] = useState("Connect a wallet to sign an ownership challenge.");
+  const [recoveryNotice, setRecoveryNotice] = useState<RecoveryNotice | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -170,12 +190,19 @@ export default function Home() {
         if (cancelled) return;
 
         setTestnetTransactionStatus(status);
+        if (status.status === "unavailable") {
+          setRecoveryNotice(createRecoveryNotice(status.message, "testnet-status"));
+        }
+        if (status.status === "accepted") {
+          setRecoveryNotice(null);
+        }
         if (status.status === "accepted" || attempt >= transactionStatusMaxChecks) {
           return;
         }
       } catch (error) {
         if (cancelled) return;
 
+        setRecoveryNotice(createRecoveryNotice(error, "testnet-status"));
         setTestnetTransactionStatus({
           txId: trackedTxId,
           status: "unavailable",
@@ -231,6 +258,7 @@ export default function Home() {
         const resolvedOnChainTxId = resolveOnChainTransactionId(trackedWalletExecutionId, status);
         if (resolvedOnChainTxId) {
           setOnChainTxId(resolvedOnChainTxId);
+          setRecoveryNotice(null);
         }
 
         setWalletStatusMessage(
@@ -256,6 +284,7 @@ export default function Home() {
       } catch (error) {
         if (cancelled) return;
 
+        setRecoveryNotice(createRecoveryNotice(error, "wallet-status"));
         setWalletStatusMessage(
           error instanceof Error ? error.message : "Unable to check wallet execution status."
         );
@@ -277,6 +306,7 @@ export default function Home() {
 
   useEffect(() => {
     if (walletConnected) {
+      setRecoveryNotice(null);
       setWalletHistory([]);
       setWalletHistoryStatus("idle");
       setWalletHistoryMessage("Wallet connected. Load private_vote.aleo history from your wallet.");
@@ -294,6 +324,11 @@ export default function Home() {
     setWalletSignatureMessage("Connect a wallet to sign an ownership challenge.");
   }, [walletConnected, publicKey]);
 
+  useEffect(() => {
+    if (!walletError) return;
+    setRecoveryNotice(createRecoveryNotice(walletError, "wallet-connect"));
+  }, [walletError]);
+
   const agreePercent = useMemo(
     () => calculateAgreePercent(proposal.agreeVotes, proposal.disagreeVotes),
     [proposal.agreeVotes, proposal.disagreeVotes]
@@ -304,13 +339,47 @@ export default function Home() {
     [plannedVoteCounts]
   );
   const visibleWalletHistory = walletHistory.slice(0, 4);
+  const canRetryRecovery = Boolean(
+    recoveryNotice &&
+      walletConnected &&
+      (recoveryNotice.context === "wallet-signature" ||
+        recoveryNotice.context === "wallet-history" ||
+        (recoveryNotice.context === "wallet-execution" && ticket && !isProving))
+  );
+
+  function recoveryRetryLabel(notice: RecoveryNotice) {
+    if (notice.context === "wallet-signature") return "Retry signature";
+    if (notice.context === "wallet-history") return "Retry history";
+    if (notice.context === "wallet-execution") return "Retry vote";
+    return "Retry";
+  }
+
+  function retryRecovery() {
+    if (!recoveryNotice || !canRetryRecovery) return;
+
+    const context = recoveryNotice.context;
+    setRecoveryNotice(null);
+    if (context === "wallet-signature") {
+      void proveWalletOwnership();
+      return;
+    }
+    if (context === "wallet-history") {
+      void loadWalletTransactionHistory();
+      return;
+    }
+    if (context === "wallet-execution") {
+      void castVote();
+    }
+  }
 
   async function loadWalletTransactionHistory() {
     if (!walletConnected) {
       setWalletHistoryMessage("Connect an Aleo wallet before loading transaction history.");
+      setRecoveryNotice(createRecoveryNotice("Connect an Aleo wallet before loading transaction history.", "wallet-history"));
       return;
     }
 
+    setRecoveryNotice(null);
     setWalletHistoryStatus("loading");
     setWalletHistoryMessage("Loading private_vote.aleo history from the connected wallet...");
 
@@ -318,12 +387,14 @@ export default function Home() {
       const history = await requestTransactionHistory(programId);
       setWalletHistory(history);
       setWalletHistoryStatus("loaded");
+      setRecoveryNotice(null);
       setWalletHistoryMessage(
         history.length > 0
           ? `Loaded ${history.length} private_vote.aleo transaction${history.length === 1 ? "" : "s"} from wallet history.`
           : "No private_vote.aleo transactions were returned by this wallet."
       );
     } catch (error) {
+      setRecoveryNotice(createRecoveryNotice(error, "wallet-history"));
       setWalletHistoryStatus("failed");
       setWalletHistoryMessage(error instanceof Error ? error.message : "Unable to load wallet transaction history.");
     }
@@ -332,6 +403,7 @@ export default function Home() {
   async function proveWalletOwnership() {
     if (!walletConnected || !publicKey) {
       setWalletSignatureMessage("Connect an Aleo wallet before signing an ownership challenge.");
+      setRecoveryNotice(createRecoveryNotice("Connect an Aleo wallet before signing an ownership challenge.", "wallet-signature"));
       return;
     }
 
@@ -347,6 +419,7 @@ export default function Home() {
 
     setWalletSignatureStatus("signing");
     setWalletSignatureProof(null);
+    setRecoveryNotice(null);
     setWalletSignatureMessage("Review and sign the ownership challenge in your wallet.");
 
     try {
@@ -366,7 +439,15 @@ export default function Home() {
           ? "Wallet signature verified against the connected Aleo address."
           : "Wallet signature did not verify against the connected Aleo address."
       );
+      if (verified) {
+        setRecoveryNotice(null);
+      } else {
+        setRecoveryNotice(
+          createRecoveryNotice("Wallet signature did not verify against the connected Aleo address.", "wallet-signature")
+        );
+      }
     } catch (error) {
+      setRecoveryNotice(createRecoveryNotice(error, "wallet-signature"));
       setWalletSignatureStatus("failed");
       setWalletSignatureMessage(error instanceof Error ? error.message : "Unable to sign wallet challenge.");
     }
@@ -375,9 +456,11 @@ export default function Home() {
   async function issueTicket() {
     if (!walletConnected || !publicKey) {
       setMessage("Connect an Aleo wallet before issuing a private ticket.");
+      setRecoveryNotice(createRecoveryNotice("Connect an Aleo wallet before issuing a private ticket.", "wallet-connect"));
       return;
     }
 
+    setRecoveryNotice(null);
     setIsIssuing(true);
     setReport(null);
     setWalletExecutionId(null);
@@ -433,9 +516,11 @@ export default function Home() {
     if (!ticket) return;
     if (!walletConnected || !publicKey) {
       setMessage("Connect an Aleo wallet before casting a private vote.");
+      setRecoveryNotice(createRecoveryNotice("Connect an Aleo wallet before casting a private vote.", "wallet-execution"));
       return;
     }
 
+    setRecoveryNotice(null);
     setIsProving(true);
     setWalletExecutionId(null);
     setWalletAdapterStatus(null);
@@ -510,6 +595,7 @@ export default function Home() {
 
       setTicket(null);
     } catch (error) {
+      setRecoveryNotice(createRecoveryNotice(error, "wallet-execution"));
       setProofResult(error instanceof Error ? error.message : String(error));
       setExecutionStatus("failed");
       setMessage(error instanceof Error ? error.message : "Aleo SDK execution failed");
@@ -619,6 +705,44 @@ export default function Home() {
             </Button>
 
             <p className="mt-4 text-sm font-black text-[#6f3d2f]">{message}</p>
+
+            {recoveryNotice ? (
+              <div className={`mt-4 rounded-md border p-4 ${recoveryToneClasses[recoveryNotice.tone]}`}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="inline-flex items-center gap-2 text-xs font-black uppercase text-[#6f3d2f]">
+                      <AlertTriangle size={14} />
+                      Recovery plan
+                    </p>
+                    <strong className="mt-1 block text-base">{recoveryNotice.title}</strong>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {canRetryRecovery ? (
+                      <Button onClick={retryRecovery} size="sm" type="button" variant="outline">
+                        <RefreshCw size={14} />
+                        {recoveryRetryLabel(recoveryNotice)}
+                      </Button>
+                    ) : null}
+                    <Button onClick={() => setRecoveryNotice(null)} size="sm" type="button" variant="ghost">
+                      Dismiss
+                    </Button>
+                  </div>
+                </div>
+                <p className="mt-2 text-xs font-bold text-stone-700 [overflow-wrap:anywhere]">
+                  {recoveryNotice.message}
+                </p>
+                <ol className="mt-3 grid gap-2 text-xs font-bold text-stone-700">
+                  {recoveryNotice.steps.map((step, index) => (
+                    <li className="flex gap-2" key={`${index}-${step}`}>
+                      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full border border-stone-950 bg-white text-[10px] font-black">
+                        {index + 1}
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : null}
 
             <div className="mt-6 rounded-md border border-stone-950 bg-white p-4">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">

@@ -86,6 +86,7 @@ just frontend-dev
 - 钱包批准前展示 execution request，包括 program、function、inputs、network 和 public fee。
 - 跟踪钱包提交后的 testnet transaction 状态：checking、pending、accepted 或 unavailable。
 - 在钱包授权 on-chain history 后，读取当前钱包里 `private_vote.aleo` 的交易历史。
+- 钱包、签名、交易历史、广播或 testnet 状态检查失败时，展示分类后的恢复方案和可重试动作。
 - 展示公开计票结果。
 - 生成本地验证报告用于演示。
 - 通过 TypeScript SDK 和 Rust snarkVM 客户端保留测试网执行入口。
@@ -148,6 +149,7 @@ NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @al
 - 通过 `transactionStatus()` 解析钱包返回的 temporary execution id，再把它作为 on-chain transaction id 使用。
 - 请求钱包 on-chain history 权限，并通过 `requestTransactionHistory()` 提供 `private_vote.aleo` 交易历史刷新。
 - 钱包返回交易 id 后，轮询同源 `/api/testnet/transactions/:txId` route，避免浏览器直接跨域依赖 Provable API。
+- 钱包、签名、交易历史、广播和 testnet 状态失败统一进入恢复 helper，给用户明确下一步，而不是只暴露原始 adapter 错误。
 - 在 `next.config.ts` 配置 COOP / COEP 头，为 `SharedArrayBuffer` 提供支持。
 - 使用 `next build --webpack`，因为 Next 16 的 Turbopack 在当前沙箱里会尝试绑定本地端口并触发 `Operation not permitted`。
 - Leo 程序变化后，需要把 `leo/private_vote/build/main.aleo` 同步到 `frontend/public/programs/private_vote.aleo`。
@@ -189,7 +191,7 @@ Rust 客户端参考当前目录里已经调通的 `hello/client-rust` 项目：
 - 尽可能从链上数据读取提案状态和计票结果，而不是依赖本地 demo 状态。
 - 部署带持久化存储、限流和健康检查的后端 API。
 - 持久化钱包提交交易的状态历史，而不是只保存在浏览器状态里。
-- 继续完善用户拒签、手续费不足、广播失败、钱包扩展不可用等情况的恢复路径。
+- 增加恢复结果 telemetry，在不收集私密投票数据的前提下复盘高频钱包和测试网失败模式。
 - 增加端到端测试，覆盖连接钱包、签发票据、批准 execution 和 Explorer 链接展示。
 
 ## 许可证
