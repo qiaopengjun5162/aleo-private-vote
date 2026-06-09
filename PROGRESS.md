@@ -108,3 +108,7 @@
 
 - Added `CONTRIBUTING.md` with project scope, setup commands, testnet safety notes, change guidelines, and a PR checklist.
 - Documented that testnet logs must be sanitized because Leo can print `.env` values.
+
+## 2026-06-09 README Badges
+
+- Added README badges for Leo 4.0.2, Rust 1.96.0, Node.js 24.15.0, Next.js 16.2.7, and MIT license.

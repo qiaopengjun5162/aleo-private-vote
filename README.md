@@ -1,5 +1,11 @@
 # Aleo Private Vote
 
+![Leo](https://img.shields.io/badge/Leo-4.0.2-purple)
+![Rust](https://img.shields.io/badge/Rust-1.96.0-orange?logo=rust)
+![Node.js](https://img.shields.io/badge/Node.js-24.15.0-green?logo=node.js)
+![Next.js](https://img.shields.io/badge/Next.js-16.2.7-black?logo=next.js)
+![License](https://img.shields.io/badge/License-MIT-blue)
+
 Aleo Private Vote is a privacy-preserving voting DApp MVP built for the Aleo 101 Bootcamp.
 
 The project starts from the official `ProvableHQ/leo-examples` voting example and turns it into a small full-stack DApp with a Leo program, a TypeScript SDK client, a backend API, and a frontend voting dashboard.
