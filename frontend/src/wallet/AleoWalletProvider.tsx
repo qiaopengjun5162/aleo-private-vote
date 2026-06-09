@@ -42,6 +42,7 @@ type AleoWalletContextValue = {
   wallets: WalletOption[];
   connect: (walletName: string) => Promise<boolean>;
   disconnect: () => Promise<void>;
+  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
   executeTransaction: (options: TransactionOptions) => Promise<string>;
   transactionStatus: (transactionId: string) => Promise<TransactionStatusResponse>;
   requestTransactionHistory: (program?: string) => Promise<WalletTransactionHistoryEntry[]>;
@@ -191,6 +192,15 @@ export function AleoWalletProvider({ children }: { children: ReactNode }) {
     return result.transactionId;
   }, []);
 
+  const signMessage = useCallback(async (message: Uint8Array) => {
+    const adapter = selectedAdapterRef.current;
+    if (!adapter || !adapter.connected) {
+      throw new Error("Aleo wallet is not connected.");
+    }
+
+    return adapter.signMessage(message);
+  }, []);
+
   const requestTransactionHistory = useCallback(async (program = programId) => {
     const adapter = selectedAdapterRef.current;
     if (!adapter || !adapter.connected) {
@@ -220,6 +230,7 @@ export function AleoWalletProvider({ children }: { children: ReactNode }) {
       wallets,
       connect,
       disconnect,
+      signMessage,
       executeTransaction,
       transactionStatus,
       requestTransactionHistory
@@ -231,6 +242,7 @@ export function AleoWalletProvider({ children }: { children: ReactNode }) {
       wallets,
       connect,
       disconnect,
+      signMessage,
       executeTransaction,
       transactionStatus,
       requestTransactionHistory

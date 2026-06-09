@@ -34,6 +34,7 @@ Voting is a natural privacy use case: voters should be able to cast a choice wit
 - Testnet wallet execution for `private_vote.aleo/main`.
 - Same-origin testnet transaction status checks after wallet submission.
 - Wallet-scoped transaction history for `private_vote.aleo` through the Aleo wallet adapter.
+- Wallet ownership proof through `signMessage()` and local signature verification against the connected address.
 - Official Aleo wallet adapter support for Leo, Shield, Puzzle, and Fox Wallet.
 - Optional Dynamic embedded Aleo wallet entry, gated by `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`.
 - Backend API for demo proposals, private ticket commitments, and verification reports.
@@ -67,13 +68,14 @@ The project has two layers of voting logic:
 The DApp flow is:
 
 1. The user connects a supported Aleo wallet in the frontend.
-2. The frontend loads a proposal from the backend.
-3. The user requests a private ticket; the backend issues a demo ticket commitment and increments `ticketsIssued`.
-4. The user chooses `Agree` or `Disagree`.
-5. The frontend runs `private_vote.aleo/main` in an Aleo SDK Web Worker with the next public tally.
-6. If the local SDK execution returns `true`, the frontend opens the connected wallet and requests a testnet execution of `private_vote.aleo/main`.
-7. After the wallet returns the transaction id, the frontend displays the Explorer link and submits a verification report to the backend.
-8. The backend stores the report and returns the updated public tally.
+2. The user can sign an ownership challenge; the frontend verifies the signature against the connected Aleo address.
+3. The frontend loads a proposal from the backend.
+4. The user requests a private ticket; the backend issues a demo ticket commitment and increments `ticketsIssued`.
+5. The user chooses `Agree` or `Disagree`.
+6. The frontend runs `private_vote.aleo/main` in an Aleo SDK Web Worker with the next public tally.
+7. If the local SDK execution returns `true`, the frontend opens the connected wallet and requests a testnet execution of `private_vote.aleo/main`.
+8. After the wallet returns the transaction id, the frontend displays the Explorer link and submits a verification report to the backend.
+9. The backend stores the report and returns the updated public tally.
 
 In the full on-chain flow, `propose`, `new_ticket`, `agree`, and `disagree` model private record-based voting. The lightweight `main` verifier keeps local demos, CI, and SDK checks fast while still exercising the Aleo execution path.
 
@@ -171,6 +173,7 @@ The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUB
 - Create and display voting proposals.
 - Connect Leo, Shield, Puzzle, or Fox Wallet before issuing a ticket or casting a vote.
 - Optionally enable a Dynamic embedded Aleo wallet entry when `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is configured.
+- Sign and verify a wallet ownership challenge against the connected address.
 - Issue private voting tickets.
 - Cast agree or disagree votes.
 - Submit an Aleo wallet testnet execution for `private_vote.aleo/main`.
@@ -192,7 +195,7 @@ The default production path uses the official wallet adapter packages from `Prov
 - `@provablehq/aleo-wallet-adaptor-fox`
 - `@provablehq/aleo-wallet-standard`
 
-This path connects browser wallet extensions and uses the selected adapter's `executeTransaction()` API for the testnet execution request. Because wallet adapters may return a temporary execution id first, the frontend calls `transactionStatus(walletExecutionId)` to resolve the on-chain `transactionId` before opening Explorer links or checking testnet acceptance. The connection asks for `WalletDecryptPermission.OnChainHistory` for `private_vote.aleo` so the app can call `requestTransactionHistory(programId)` and show wallet-scoped transaction history beside the explorer status check.
+This path connects browser wallet extensions and uses the selected adapter's `signMessage()` API for wallet ownership proof and `executeTransaction()` API for the testnet execution request. The ownership proof signs a domain-bound challenge and verifies it locally with `Signature.verify(Address, message)`. Because wallet adapters may return a temporary execution id first, the frontend calls `transactionStatus(walletExecutionId)` to resolve the on-chain `transactionId` before opening Explorer links or checking testnet acceptance. The connection asks for `WalletDecryptPermission.OnChainHistory` for `private_vote.aleo` so the app can call `requestTransactionHistory(programId)` and show wallet-scoped transaction history beside the explorer status check.
 
 The frontend also includes optional Dynamic embedded wallet support through `@dynamic-labs/sdk-react-core` and `@dynamic-labs/aleo`. It is disabled by default. Set `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` only after creating and validating a real Dynamic environment in the Dynamic dashboard:
 
@@ -233,6 +236,7 @@ The frontend now uses Next.js App Router, React, Tailwind CSS, and local shadcn/
 - Render a custom React 19-compatible wallet selector that keeps all supported wallet options visible before extension detection finishes.
 - Render one `Connect Wallet` modal with external Aleo wallet adapter and Dynamic embedded wallet paths.
 - Keep the Dynamic option disabled unless `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is configured.
+- Use `signMessage()` for wallet ownership proof and verify the signature locally before showing it as verified.
 - Show the exact wallet execution request and track local check, wallet approval, submitted, and failed states.
 - Request wallet testnet execution after the local SDK check succeeds.
 - Resolve wallet-returned temporary execution ids through `transactionStatus()` before treating them as on-chain transaction ids.
@@ -279,7 +283,7 @@ This project is intentionally kept small, but it should still behave like a trus
 - Read proposal state and tallies from chain data instead of local demo state whenever possible.
 - Deploy the backend API with persistent storage, rate limits, and health checks.
 - Persist wallet-submitted transaction status history instead of keeping it only in browser state.
-- Add clear recovery paths for rejected wallet signatures, insufficient fee balance, failed broadcasts, and unavailable wallet extensions.
+- Expand recovery paths for rejected wallet signatures, insufficient fee balance, failed broadcasts, and unavailable wallet extensions.
 - Add end-to-end tests for connect wallet, issue ticket, approve execution, and Explorer-link display.
 
 ## References
