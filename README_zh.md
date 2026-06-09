@@ -1,8 +1,8 @@
 # Aleo Private Vote
 
-Aleo Private Vote 是一个为 Aleo 101 Bootcamp 准备的隐私投票 DApp MVP。
+Aleo Private Vote 是一个基于 Aleo 的隐私投票 DApp，用于演示私密票据驱动的投票流程。
 
-项目基于官方 `ProvableHQ/leo-examples` 的 `vote` 示例扩展而来，目标是做成一个完整的小型作品：包含 Leo 程序、TypeScript SDK 调用、后端 API、前端 DApp 界面和最终提交截图。
+项目基于官方 `ProvableHQ/leo-examples` 的 `vote` 示例扩展而来，包含 Leo 程序、TypeScript SDK 调用、Rust snarkVM 客户端、后端 API 和前端 DApp 界面。
 
 ## 为什么做隐私投票
 
@@ -10,7 +10,7 @@ Aleo Private Vote 是一个为 Aleo 101 Bootcamp 准备的隐私投票 DApp MVP�
 
 ## 投票逻辑
 
-这个 MVP 有两层投票逻辑：
+这个项目有两层投票逻辑：
 
 1. **Leo 隐私模型**：`private_vote.aleo` 定义提案、私密票据 record、投票 record，以及提案信息、票据数量、赞成票、反对票这些公开 mapping。
 2. **演示验证路径**：`main(public agree_count, public disagree_count) -> bool` 判断公开计票是否满足 `agree >= disagree`。浏览器、TypeScript 客户端和 Rust 客户端都会本地执行这个函数，用一个很轻量的投票规则证明 Aleo 执行链路是通的。
@@ -21,10 +21,10 @@ DApp 的交互流程是：
 2. 用户请求一张私密票据，后端签发 demo ticket commitment，并增加 `ticketsIssued`。
 3. 用户选择 `Agree` 或 `Disagree`。
 4. 前端把下一轮公开计票传给 Aleo SDK Web Worker，执行 `private_vote.aleo/main`。
-5. SDK 执行返回 `true` 后，前端把 verification report 提交给后端。
+5. SDK 执行返回 `true` 后，前端把 verification report 发送给后端。
 6. 后端保存 report，并返回更新后的公开计票。
 
-真实上链版本里，`propose`、`new_ticket`、`agree`、`disagree` 是 record 驱动的隐私投票流程。Bootcamp MVP 里先用轻量的 `main` 验证函数保证截图、CI 和本地演示都足够快，同时保留 Aleo 隐私执行的核心路径。
+完整上链流程里，`propose`、`new_ticket`、`agree`、`disagree` 用于建模 record 驱动的隐私投票。轻量的 `main` 验证函数让本地演示、CI 和 SDK 检查保持快速，同时保留 Aleo 隐私执行的核心路径。
 
 ## 架构
 
@@ -35,7 +35,7 @@ aleo-private-vote/
   client-rust/       # snarkVM Rust 客户端，本地 dry-run 和测试网执行
   backend/           # 提案和验证报告 API
   frontend/          # Next.js + shadcn/ui 风格投票 DApp 界面
-  screenshots/       # 作业提交截图
+  screenshots/       # 演示和测试网截图
 ```
 
 ## 命令
@@ -69,7 +69,7 @@ just frontend-dev
 
 前端默认连接 `http://127.0.0.1:8787`。如果后端地址不同，可以通过 `NEXT_PUBLIC_API_URL` 覆盖。
 
-## MVP 范围
+## 项目范围
 
 - 创建和展示投票提案。
 - 发放私密投票票据。
@@ -103,16 +103,16 @@ just frontend-dev
 - 使用 `next build --webpack`，因为 Next 16 的 Turbopack 在当前沙箱里会尝试绑定本地端口并触发 `Operation not permitted`。
 - Leo 程序变化后，需要把 `leo/private_vote/build/main.aleo` 同步到 `frontend/public/programs/private_vote.aleo`。
 
-## Task 4 测试网路径
+## 测试网部署
 
-MVP 先把测试网执行入口隔离在 CLI 客户端里：
+测试网执行入口隔离在 CLI 客户端里，这样本地演示不依赖 faucet 余额或网络可用性。
 
 1. 运行 `just leo-test` 编译 `private_vote.aleo`。
 2. 使用有测试网余额的账号时，在本地设置 `PRIVATE_KEY`。
 3. 部署前确认 `leo/private_vote/src/main.leo` 里的 program id 在测试网上是唯一的。
 4. 运行 `just deploy-testnet` 广播部署交易。
 5. 运行 `just rust-execute-testnet` 或 `just execute-testnet` 广播一次 `main 3u64 2u64` 交互。
-6. 最终提交 Bootcamp 时，补充部署后的 program id、交互交易和 Explorer 截图。
+6. 记录部署后的 program id、交互交易和 Explorer 截图，作为发布证据。
 
 当前测试网部署：
 

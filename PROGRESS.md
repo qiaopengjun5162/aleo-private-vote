@@ -112,3 +112,8 @@
 ## 2026-06-09 README Badges
 
 - Added README badges for Leo 4.0.2, Rust 1.96.0, Node.js 24.15.0, Next.js 16.2.7, and MIT license.
+
+## 2026-06-09 README Project Positioning
+
+- Reworked `README.md` and `README_zh.md` to present Aleo Private Vote as an independent project instead of a Bootcamp task submission.
+- Renamed Task-oriented sections to project and testnet deployment sections.

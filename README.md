@@ -6,7 +6,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-16.2.7-black?logo=next.js)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
-Aleo Private Vote is a privacy-preserving voting DApp MVP built for the Aleo 101 Bootcamp.
+Aleo Private Vote is a privacy-preserving voting DApp for private ticket-based voting on Aleo.
 
 The project starts from the official `ProvableHQ/leo-examples` voting example and turns it into a small full-stack DApp with a Leo program, a TypeScript SDK client, a backend API, and a frontend voting dashboard.
 
@@ -16,7 +16,7 @@ Voting is a natural privacy use case: voters should be able to cast a choice wit
 
 ## Voting Logic
 
-The MVP has two layers of voting logic:
+The project has two layers of voting logic:
 
 1. **Leo privacy model**: `private_vote.aleo` defines proposals, ticket records, vote records, and public mappings for proposal metadata, ticket counts, agree votes, and disagree votes.
 2. **Demo verifier path**: `main(public agree_count, public disagree_count) -> bool` returns whether the public tally passes the rule `agree >= disagree`. The browser, TypeScript client, and Rust client all execute this function locally so the demo can prove a small voting rule quickly.
@@ -30,7 +30,7 @@ The DApp flow is:
 5. If the SDK execution returns `true`, the frontend submits a verification report to the backend.
 6. The backend stores the report and returns the updated public tally.
 
-In a real deployed version, `propose`, `new_ticket`, `agree`, and `disagree` are the on-chain private record flow. For the Bootcamp MVP, the lightweight `main` verifier keeps screenshots, CI, and local demos fast and reliable while still showing the Aleo privacy execution path.
+In the full on-chain flow, `propose`, `new_ticket`, `agree`, and `disagree` model private record-based voting. The lightweight `main` verifier keeps local demos, CI, and SDK checks fast while still exercising the Aleo execution path.
 
 ## Architecture
 
@@ -41,7 +41,7 @@ aleo-private-vote/
   client-rust/       # snarkVM Rust client for local dry-run and testnet execution
   backend/           # Demo API for proposals and verification reports
   frontend/          # Next.js + shadcn/ui-style DApp UI
-  screenshots/       # Submission screenshots
+  screenshots/       # Demo and testnet screenshots
 ```
 
 ## Commands
@@ -75,7 +75,7 @@ just frontend-dev
 
 The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUBLIC_API_URL` when needed.
 
-## MVP Scope
+## Project Scope
 
 - Create and display voting proposals.
 - Issue private voting tickets.
@@ -109,16 +109,16 @@ The frontend now uses Next.js App Router, React, Tailwind CSS, and local shadcn/
 - Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox.
 - Keep `frontend/public/programs/private_vote.aleo` in sync with `leo/private_vote/build/main.aleo` after Leo program changes.
 
-## Task 4 Testnet Path
+## Testnet Deployment
 
-The MVP keeps testnet execution isolated in CLI clients:
+Testnet execution is isolated in CLI clients so local demos remain usable without faucet balance or network availability.
 
 1. Run `just leo-test` to compile `private_vote.aleo`.
 2. Set `PRIVATE_KEY` locally when using a funded Aleo testnet account.
 3. Confirm the program id in `leo/private_vote/src/main.leo` is unique on testnet before deployment.
 4. Run `just deploy-testnet` to broadcast the deployment.
 5. Run `just rust-execute-testnet` or `just execute-testnet` to broadcast one `main 3u64 2u64` interaction.
-6. For final Bootcamp submission, add the deployed program id, interaction transaction, and Explorer screenshot.
+6. Record the deployed program id, interaction transaction, and Explorer screenshot for release evidence.
 
 Current testnet deployment:
 
