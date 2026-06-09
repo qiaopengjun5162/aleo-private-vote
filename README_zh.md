@@ -99,7 +99,7 @@ just frontend-dev
 - `@provablehq/aleo-wallet-adaptor-fox`
 - `@provablehq/aleo-wallet-standard`
 
-这条路径连接浏览器钱包扩展，并通过选中 adapter 的 `executeTransaction()` API 请求测试网 execution。连接钱包时会为 `private_vote.aleo` 请求 `WalletDecryptPermission.OnChainHistory`，这样前端可以调用 `requestTransactionHistory(programId)`，在 explorer 状态检查旁边展示钱包返回的 program-scoped 交易历史。
+这条路径连接浏览器钱包扩展，并通过选中 adapter 的 `executeTransaction()` API 请求测试网 execution。由于 wallet adapter 可能先返回 temporary execution id，前端会调用 `transactionStatus(walletExecutionId)` 解析真正的 on-chain `transactionId`，再打开 Explorer 链接或检查 testnet accepted 状态。连接钱包时会为 `private_vote.aleo` 请求 `WalletDecryptPermission.OnChainHistory`，这样前端可以调用 `requestTransactionHistory(programId)`，在 explorer 状态检查旁边展示钱包返回的 program-scoped 交易历史。
 
 前端也接入了基于 `@dynamic-labs/sdk-react-core` 和 `@dynamic-labs/aleo` 的可选 Dynamic 嵌入式钱包。它默认关闭。只有在 Dynamic dashboard 创建并验证真实环境后，才设置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`：
 
@@ -142,6 +142,7 @@ NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @al
 - 未配置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` 时，Dynamic 选项保持禁用。
 - 展示准确的钱包 execution request，并跟踪本地检查、钱包批准、已提交和失败状态。
 - 本地 SDK 检查通过后，请求钱包广播测试网 execution。
+- 通过 `transactionStatus()` 解析钱包返回的 temporary execution id，再把它作为 on-chain transaction id 使用。
 - 请求钱包 on-chain history 权限，并通过 `requestTransactionHistory()` 提供 `private_vote.aleo` 交易历史刷新。
 - 钱包返回交易 id 后，轮询同源 `/api/testnet/transactions/:txId` route，避免浏览器直接跨域依赖 Provable API。
 - 在 `next.config.ts` 配置 COOP / COEP 头，为 `SharedArrayBuffer` 提供支持。

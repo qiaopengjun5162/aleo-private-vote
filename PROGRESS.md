@@ -239,3 +239,10 @@
 - PR #7 was merged into `main`, and Vercel deployment `dpl_GqPrSi1khbjgJYk5BYNAkNZso8Hx` is Ready.
 - `aleo-private-vote.vercel.app` points to `aleo-private-vote-cerb7tfey-qiaopengjuns-projects.vercel.app`.
 - Verified production HTML includes the `Wallet transaction history` panel and the production transaction status route still returns accepted `private_vote.aleo/main` for `at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`.
+
+## 2026-06-09 Wallet Execution Status Resolution
+
+- Rechecked the installed official `@provablehq/aleo-wallet-adaptor-core` alpha.4 execute API types after reviewing the Aleo execute guide link.
+- Added wallet adapter `transactionStatus(transactionId)` support so the UI does not assume the value returned by `executeTransaction()` is already the final on-chain transaction id.
+- Split frontend state between wallet execution id, resolved on-chain transaction id, wallet execution status, and testnet acceptance status.
+- Added unit coverage for Aleo transaction-id detection, on-chain id resolution, and wallet execution status labels.
