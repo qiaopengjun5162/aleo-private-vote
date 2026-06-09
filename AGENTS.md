@@ -54,6 +54,7 @@
 - Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox and fails with `Operation not permitted`.
 - `pnpm --filter @aleo-private-vote/frontend typecheck` reads `.next/types`; run `pnpm --filter @aleo-private-vote/frontend build` first if those generated files are missing.
 - Start the backend before the frontend for full-stack demos. If the API is unavailable, the frontend intentionally falls back to local demo mode.
+- Vercel project SSO deployment protection must stay disabled for the public `aleo-private-vote.vercel.app` demo; if the live URL redirects to Vercel Login, check `vercel project protection aleo-private-vote --format json --scope qiaopengjuns-projects`.
 - Before running `just deploy-testnet`, confirm the Leo `program ...` id is unique on testnet; `private_vote.aleo` may need to be renamed for a real deployment.
 - `private_vote.aleo` is now deployed on testnet. Deployment tx: `at18jhvcs9gnjwhnqhzgu6sl5mkuyqc9vgt8h5et8sxh98udyg70vpqdyg87a`.
 - With the current local `leo 4.0.2`, testnet deploy needed explicit `--consensus-version 14`; automatic consensus-version detection failed against `https://api.explorer.provable.com/v1` in this environment.

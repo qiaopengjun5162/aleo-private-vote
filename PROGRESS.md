@@ -193,3 +193,5 @@
 - Documented that `ProvableHQ/aleo-dev-toolkit` is the source repository for the official Aleo wallet adapter packages used by the frontend.
 - Documented the future requirement to validate Dynamic embedded wallet proving and broadcasting with a real Dynamic environment before wiring it into voting execution.
 - Vercel deployment `dpl_2ar8k7YFGZXWRhrAyiMmoyvWwGff` is Ready and `aleo-private-vote.vercel.app` points to `aleo-private-vote-7053dss3l-qiaopengjuns-projects.vercel.app`.
+- Disabled Vercel SSO deployment protection after the live `vercel.app` domain redirected to Vercel Login.
+- Verified the public live page in Browser: external wallet options render, the execution request panel renders, and the Dynamic embedded wallet button remains hidden without `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`.
