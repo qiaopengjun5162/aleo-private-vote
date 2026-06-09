@@ -246,3 +246,7 @@
 - Added wallet adapter `transactionStatus(transactionId)` support so the UI does not assume the value returned by `executeTransaction()` is already the final on-chain transaction id.
 - Split frontend state between wallet execution id, resolved on-chain transaction id, wallet execution status, and testnet acceptance status.
 - Added unit coverage for Aleo transaction-id detection, on-chain id resolution, and wallet execution status labels.
+- PR #9 was merged into `main`, and Vercel deployment `dpl_Gau762KEJGituBKtJG8uBN9Dmd2x` is Ready.
+- `aleo-private-vote.vercel.app` points to `aleo-private-vote-c72yw5nqv-qiaopengjuns-projects.vercel.app`.
+- Verified the production JavaScript bundle includes the `Wallet execution status`, `Wallet transaction history`, temporary execution id, and `transactionStatus` resolution paths.
+- Verified the production transaction status route still returns accepted `private_vote.aleo/main` for `at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`.
