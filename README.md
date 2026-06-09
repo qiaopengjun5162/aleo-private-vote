@@ -32,12 +32,13 @@ The project has two layers of voting logic:
 
 The DApp flow is:
 
-1. The frontend loads a proposal from the backend.
-2. The user requests a private ticket; the backend issues a demo ticket commitment and increments `ticketsIssued`.
-3. The user chooses `Agree` or `Disagree`.
-4. The frontend runs `private_vote.aleo/main` in an Aleo SDK Web Worker with the next public tally.
-5. If the SDK execution returns `true`, the frontend submits a verification report to the backend.
-6. The backend stores the report and returns the updated public tally.
+1. The user connects Leo Wallet in the frontend.
+2. The frontend loads a proposal from the backend.
+3. The user requests a private ticket; the backend issues a demo ticket commitment and increments `ticketsIssued`.
+4. The user chooses `Agree` or `Disagree`.
+5. The frontend runs `private_vote.aleo/main` in an Aleo SDK Web Worker with the next public tally.
+6. If the SDK execution returns `true`, the frontend submits a verification report to the backend.
+7. The backend stores the report and returns the updated public tally.
 
 In the full on-chain flow, `propose`, `new_ticket`, `agree`, and `disagree` model private record-based voting. The lightweight `main` verifier keeps local demos, CI, and SDK checks fast while still exercising the Aleo execution path.
 
@@ -87,6 +88,7 @@ The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUB
 ## Project Scope
 
 - Create and display voting proposals.
+- Connect Leo Wallet before issuing a ticket or casting a vote.
 - Issue private voting tickets.
 - Cast agree or disagree votes.
 - Show public vote tallies.

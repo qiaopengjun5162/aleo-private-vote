@@ -19,12 +19,13 @@ Aleo Private Vote 是一个基于 Aleo 的隐私投票 DApp，用于演示私密
 
 DApp 的交互流程是：
 
-1. 前端从后端加载提案。
-2. 用户请求一张私密票据，后端签发 demo ticket commitment，并增加 `ticketsIssued`。
-3. 用户选择 `Agree` 或 `Disagree`。
-4. 前端把下一轮公开计票传给 Aleo SDK Web Worker，执行 `private_vote.aleo/main`。
-5. SDK 执行返回 `true` 后，前端把 verification report 发送给后端。
-6. 后端保存 report，并返回更新后的公开计票。
+1. 用户先在前端连接 Leo Wallet。
+2. 前端从后端加载提案。
+3. 用户请求一张私密票据，后端签发 demo ticket commitment，并增加 `ticketsIssued`。
+4. 用户选择 `Agree` 或 `Disagree`。
+5. 前端把下一轮公开计票传给 Aleo SDK Web Worker，执行 `private_vote.aleo/main`。
+6. SDK 执行返回 `true` 后，前端把 verification report 发送给后端。
+7. 后端保存 report，并返回更新后的公开计票。
 
 完整上链流程里，`propose`、`new_ticket`、`agree`、`disagree` 用于建模 record 驱动的隐私投票。轻量的 `main` 验证函数让本地演示、CI 和 SDK 检查保持快速，同时保留 Aleo 隐私执行的核心路径。
 
@@ -74,6 +75,7 @@ just frontend-dev
 ## 项目范围
 
 - 创建和展示投票提案。
+- 连接 Leo Wallet 后签发票据和投票。
 - 发放私密投票票据。
 - 投赞成票或反对票。
 - 展示公开计票结果。

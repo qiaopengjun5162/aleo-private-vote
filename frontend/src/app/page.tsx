@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { LeoWalletButton, useLeoWallet } from "@/wallet/LeoWalletProvider";
 import { AleoWorker } from "@/workers/AleoWorker";
 import {
   calculateAgreePercent,
@@ -39,6 +40,7 @@ async function readProgram() {
 }
 
 export default function Home() {
+  const { connected: walletConnected, publicKey } = useLeoWallet();
   const [proposal, setProposal] = useState<Proposal>(fallbackProposal);
   const [ticket, setTicket] = useState<TicketReceipt | null>(null);
   const [choice, setChoice] = useState<VoteChoice>("agree");
@@ -81,6 +83,11 @@ export default function Home() {
   );
 
   async function issueTicket() {
+    if (!walletConnected || !publicKey) {
+      setMessage("Connect Leo Wallet before issuing a private ticket.");
+      return;
+    }
+
     setIsIssuing(true);
     setReport(null);
     setMessage(apiStatus === "connected" ? "Requesting a backend ticket..." : "Issuing a local demo ticket...");
@@ -128,6 +135,10 @@ export default function Home() {
 
   async function castVote() {
     if (!ticket) return;
+    if (!walletConnected || !publicKey) {
+      setMessage("Connect Leo Wallet before casting a private vote.");
+      return;
+    }
 
     setIsProving(true);
     setMessage("Running Aleo SDK local execution in a Web Worker...");
@@ -201,10 +212,13 @@ export default function Home() {
             verifiable.
           </p>
         </div>
-        <Badge>
-          <ShieldCheck size={16} />
-          {apiStatus === "connected" ? "backend + sdk" : "sdk demo mode"}
-        </Badge>
+        <div className="flex flex-col items-start gap-3 md:items-end">
+          <LeoWalletButton />
+          <Badge>
+            <ShieldCheck size={16} />
+            {walletConnected ? (apiStatus === "connected" ? "wallet + backend + sdk" : "wallet + sdk demo") : "wallet required"}
+          </Badge>
+        </div>
       </section>
 
       <section className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -237,9 +251,9 @@ export default function Home() {
                   </code>
                 ) : null}
               </div>
-              <Button disabled={isIssuing || isProving} onClick={issueTicket}>
+              <Button disabled={!walletConnected || isIssuing || isProving} onClick={issueTicket}>
                 <Ticket size={16} />
-                {isIssuing ? "Issuing..." : "Issue ticket"}
+                {isIssuing ? "Issuing..." : walletConnected ? "Issue ticket" : "Connect wallet first"}
               </Button>
             </div>
 
@@ -252,9 +266,15 @@ export default function Home() {
               </Button>
             </div>
 
-            <Button className="w-full" disabled={!ticket || isProving} onClick={castVote} size="lg" variant="primary">
+            <Button
+              className="w-full"
+              disabled={!walletConnected || !ticket || isProving}
+              onClick={castVote}
+              size="lg"
+              variant="primary"
+            >
               <Fingerprint size={18} />
-              {isProving ? "Generating proof..." : "Cast private vote"}
+              {isProving ? "Generating proof..." : walletConnected ? "Cast private vote" : "Connect wallet to vote"}
             </Button>
 
             <p className="mt-4 text-sm font-black text-[#6f3d2f]">{message}</p>

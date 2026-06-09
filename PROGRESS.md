@@ -136,3 +136,10 @@
 - Added `.all-contributorsrc` based on the `qiaopengjun5162/gogen` README contributor setup.
 - Added the all-contributors badge and Contributors table to `README.md`.
 - Added README links for Chinese documentation and contribution guidelines.
+
+## 2026-06-09 Leo Wallet Connection
+
+- Added a frontend Leo Wallet provider using `@demox-labs/aleo-wallet-adapter-leo`.
+- Added a wallet connect button and connected address display to the main DApp header.
+- Required a connected wallet before issuing a ticket or casting a vote.
+- Updated README documentation to describe the wallet-first DApp flow.
