@@ -97,3 +97,7 @@
 - Fee transaction: `at1uwugmx0jhup86mhvv0xchw85jfwzyn28c2qhwzp9948l5ungzgrsrpj07y`.
 - Verified the program can be fetched from `https://api.provable.com/v2/testnet/program/private_vote.aleo`.
 - Noted that running Leo commands inside a directory tree containing `.env` can print environment values; use a no-`.env` temp copy or sanitized logs for future verification.
+- Executed `private_vote.aleo/main` on testnet with inputs `3u64 2u64`.
+- Interaction transaction: `at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`.
+- Interaction fee transaction: `at1emyt5a88hx6gl2rfzrz096z443suwsahrdhfl4p27kxtx5mw6g9sq469ce`.
+- Confirmed the interaction transaction was accepted and returned local plaintext output `true`; the public API shows the private boolean output as ciphertext.

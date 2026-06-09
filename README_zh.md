@@ -119,6 +119,8 @@ MVP 先把测试网执行入口隔离在 CLI 客户端里：
 - Program：`private_vote.aleo`
 - 部署交易：`at18jhvcs9gnjwhnqhzgu6sl5mkuyqc9vgt8h5et8sxh98udyg70vpqdyg87a`
 - 手续费交易：`at1uwugmx0jhup86mhvv0xchw85jfwzyn28c2qhwzp9948l5ungzgrsrpj07y`
+- 交互交易：`at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`
+- 交互结果：`main 3u64 2u64` 返回 `true`
 - Explorer：`https://testnet.explorer.provable.com/transaction/at18jhvcs9gnjwhnqhzgu6sl5mkuyqc9vgt8h5et8sxh98udyg70vpqdyg87a`
 
 ## Rust 客户端说明
