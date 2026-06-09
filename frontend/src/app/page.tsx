@@ -11,6 +11,7 @@ import {
   ListChecks,
   PlusCircle,
   RefreshCw,
+  RotateCcw,
   ShieldCheck,
   Ticket,
   Vote
@@ -31,6 +32,15 @@ import {
 } from "@/transactionStatus";
 import { AleoWalletButton, useAleoWallet } from "@/wallet/AleoWalletProvider";
 import { type WalletTransactionHistoryEntry } from "@/walletTransactionHistory";
+import {
+  clearVoteSession,
+  createVoteSessionSnapshot,
+  hasLocalVote,
+  readVoteSession,
+  recordLocalVote,
+  writeVoteSession,
+  type LocalVoteRecord
+} from "@/voteSession";
 import {
   bytesToHex,
   createWalletSignatureChallenge,
@@ -145,9 +155,28 @@ export default function Home() {
   const [proposalDescription, setProposalDescription] = useState("");
   const [isCreatingProposal, setIsCreatingProposal] = useState(false);
   const [isClosingProposal, setIsClosingProposal] = useState(false);
+  const [sessionHydrated, setSessionHydrated] = useState(false);
+  const [localSessionSavedAt, setLocalSessionSavedAt] = useState<string | null>(null);
+  const [localVotes, setLocalVotes] = useState<LocalVoteRecord[]>([]);
 
   useEffect(() => {
     let cancelled = false;
+    const savedSession = readVoteSession();
+
+    if (savedSession) {
+      setProposals(savedSession.proposals);
+      setSelectedProposalId(savedSession.selectedProposalId);
+      setChoice(savedSession.choice);
+      setTicket(savedSession.ticket);
+      setReport(savedSession.report);
+      setProofResult(savedSession.proofResult);
+      setWalletExecutionId(savedSession.walletExecutionId);
+      setOnChainTxId(savedSession.onChainTxId);
+      setLocalVotes(savedSession.localVotes);
+      setLocalSessionSavedAt(savedSession.savedAt);
+      setMessage("Local voting workspace restored");
+    }
+    setSessionHydrated(true);
 
     async function loadProposal() {
       try {
@@ -165,7 +194,13 @@ export default function Home() {
         if (cancelled) return;
 
         setApiStatus("demo");
-        setMessage(error instanceof Error ? `Demo mode: ${error.message}` : "Demo mode: backend unavailable");
+        setMessage(
+          savedSession
+            ? "Demo mode: restored local voting workspace"
+            : error instanceof Error
+              ? `Demo mode: ${error.message}`
+              : "Demo mode: backend unavailable"
+        );
       }
     }
 
@@ -252,6 +287,17 @@ export default function Home() {
 
     const trackedWalletExecutionId = walletExecutionId;
     const immediateOnChainTxId = isAleoTransactionId(trackedWalletExecutionId) ? trackedWalletExecutionId : null;
+
+    if (!walletConnected) {
+      setWalletAdapterStatus({
+        status: "submitted",
+        transactionId: immediateOnChainTxId ?? undefined
+      });
+      setWalletStatusMessage("Reconnect the same wallet to refresh wallet execution status.");
+      setOnChainTxId((current) => current ?? immediateOnChainTxId);
+      return;
+    }
+
     let cancelled = false;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -319,7 +365,39 @@ export default function Home() {
         clearTimeout(timeoutId);
       }
     };
-  }, [walletExecutionId, checkWalletTransactionStatus]);
+  }, [walletConnected, walletExecutionId, checkWalletTransactionStatus]);
+
+  useEffect(() => {
+    if (!sessionHydrated || apiStatus === "checking") return;
+
+    const snapshot = createVoteSessionSnapshot({
+      proposals,
+      selectedProposalId,
+      choice,
+      ticket,
+      report,
+      proofResult,
+      walletExecutionId,
+      onChainTxId,
+      localVotes
+    });
+    if (!snapshot) return;
+
+    writeVoteSession(snapshot);
+    setLocalSessionSavedAt(snapshot.savedAt);
+  }, [
+    apiStatus,
+    choice,
+    localVotes,
+    onChainTxId,
+    proofResult,
+    proposals,
+    report,
+    selectedProposalId,
+    sessionHydrated,
+    ticket,
+    walletExecutionId
+  ]);
 
   useEffect(() => {
     if (walletConnected) {
@@ -363,6 +441,12 @@ export default function Home() {
     [plannedVoteCounts]
   );
   const visibleWalletHistory = walletHistory.slice(0, 4);
+  const walletAlreadyVoted = Boolean(publicKey && hasLocalVote(localVotes, proposal.id, publicKey));
+  const localSessionStatus = apiStatus === "connected"
+    ? "Backend source"
+    : localSessionSavedAt
+      ? "Local workspace saved"
+      : "Local workspace";
   const canRetryRecovery = Boolean(
     recoveryNotice &&
       walletConnected &&
@@ -408,6 +492,22 @@ export default function Home() {
     setProofResult("not-run");
     setRecoveryNotice(null);
     if (nextMessage) setMessage(nextMessage);
+  }
+
+  function resetLocalWorkspace() {
+    clearVoteSession();
+    setLocalVotes([]);
+    setLocalSessionSavedAt(null);
+    setChoice("agree");
+    setProposalTitle("");
+    setProposalDescription("");
+    if (apiStatus !== "connected") {
+      setProposals([fallbackProposal]);
+      setSelectedProposalId(fallbackProposal.id);
+    }
+    resetVoteSession(
+      apiStatus === "connected" ? "Local workspace reset. Backend proposals preserved." : "Local workspace reset."
+    );
   }
 
   function updateProposal(updatedProposal: Proposal) {
@@ -601,6 +701,11 @@ export default function Home() {
       setMessage("This proposal is closed. Select or create an active proposal before issuing a ticket.");
       return;
     }
+    if (hasLocalVote(localVotes, proposal.id, publicKey)) {
+      setTicket(null);
+      setMessage("This wallet already voted on the selected proposal in this browser workspace.");
+      return;
+    }
 
     setRecoveryNotice(null);
     setIsIssuing(true);
@@ -665,6 +770,11 @@ export default function Home() {
       setMessage("This proposal is closed. Select or create an active proposal before voting.");
       return;
     }
+    if (hasLocalVote(localVotes, proposal.id, publicKey)) {
+      setTicket(null);
+      setMessage("This wallet already voted on the selected proposal in this browser workspace.");
+      return;
+    }
 
     setRecoveryNotice(null);
     setIsProving(true);
@@ -699,38 +809,80 @@ export default function Home() {
       const reportTxId = walletTxId;
       setExecutionStatus("submitted");
       void loadWalletTransactionHistory();
+      const votedAt = new Date().toISOString();
+      const localReport = {
+        id: `report-${Date.now()}`,
+        proposalId: proposal.id,
+        vote: choice,
+        status: "verified",
+        ticketCommitment: ticket.ticketCommitment,
+        txId: reportTxId,
+        createdAt: votedAt
+      } satisfies VoteReport;
 
       if (apiStatus === "connected") {
-        const serverReport = await readJson<VoteReport>(
-          await fetch(`${apiBaseUrl}/api/reports`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              proposalId: proposal.id,
-              vote: choice,
-              ticketCommitment: ticket.ticketCommitment
+        try {
+          const serverReport = await readJson<VoteReport>(
+            await fetch(`${apiBaseUrl}/api/reports`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                proposalId: proposal.id,
+                vote: choice,
+                ticketCommitment: ticket.ticketCommitment
+              })
             })
+          );
+          const nextReport = {
+            ...serverReport,
+            txId: reportTxId
+          };
+
+          setReport(nextReport);
+          setLocalVotes((current) =>
+            recordLocalVote(current, {
+              proposalId: proposal.id,
+              voter: publicKey,
+              reportId: nextReport.id,
+              votedAt
+            })
+          );
+          updateSelectedProposal((current) => mergeReportTally(current, serverReport, plannedVoteCounts));
+          setMessage("Wallet execution submitted and backend report stored");
+        } catch (error) {
+          setApiStatus("demo");
+          setReport(localReport);
+          setLocalVotes((current) =>
+            recordLocalVote(current, {
+              proposalId: proposal.id,
+              voter: publicKey,
+              reportId: localReport.id,
+              votedAt
+            })
+          );
+          updateSelectedProposal((current) => ({
+            ...current,
+            agreeVotes: plannedVoteCounts.agreeVotes,
+            disagreeVotes: plannedVoteCounts.disagreeVotes
+          }));
+          setMessage(
+            error instanceof Error
+              ? `Wallet execution submitted; backend report failed, saved locally: ${error.message}`
+              : "Wallet execution submitted; backend report failed and was saved locally."
+          );
+        }
+      } else {
+        setReport(localReport);
+        setLocalVotes((current) =>
+          recordLocalVote(current, {
+            proposalId: proposal.id,
+            voter: publicKey,
+            reportId: localReport.id,
+            votedAt
           })
         );
-
-        setReport({
-          ...serverReport,
-          txId: reportTxId
-        });
-        updateSelectedProposal((current) => mergeReportTally(current, serverReport, plannedVoteCounts));
-        setMessage("Wallet execution submitted and backend report stored");
-      } else {
-        setReport({
-          id: `report-${Date.now()}`,
-          proposalId: proposal.id,
-          vote: choice,
-          status: "verified",
-          ticketCommitment: ticket.ticketCommitment,
-          txId: reportTxId,
-          createdAt: new Date().toISOString()
-        });
         updateSelectedProposal((current) => ({
           ...current,
           agreeVotes: plannedVoteCounts.agreeVotes,
@@ -765,20 +917,41 @@ export default function Home() {
         </div>
         <div className="flex flex-col items-start gap-3 md:items-end">
           <AleoWalletButton />
-          <Badge>
-            <ShieldCheck size={16} />
-            {walletConnected ? (apiStatus === "connected" ? "wallet + on-chain + backend" : "wallet + on-chain") : "wallet required"}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2 md:justify-end">
+            <Badge>
+              <ShieldCheck size={16} />
+              {walletConnected ? (apiStatus === "connected" ? "wallet + on-chain + backend" : "wallet + on-chain") : "wallet required"}
+            </Badge>
+            <Button onClick={resetLocalWorkspace} size="sm" type="button" variant="outline">
+              <RotateCcw size={14} />
+              Reset local
+            </Button>
+          </div>
+          <span className="max-w-xs text-left text-xs font-bold text-stone-600 md:text-right">
+            {localSessionStatus}
+            {localSessionSavedAt ? ` at ${new Date(localSessionSavedAt).toLocaleString()}` : ""}
+          </span>
         </div>
       </section>
 
       <section className="mx-auto mb-6 grid max-w-6xl gap-3 md:grid-cols-3">
         {[
           ["1", walletConnected ? "Wallet connected" : "Connect Aleo wallet"],
-          ["2", proposalCanReceiveVotes ? (ticket ? "Ticket ready" : "Issue ticket") : "Proposal closed"],
+          [
+            "2",
+            walletAlreadyVoted
+              ? "Wallet already voted"
+              : proposalCanReceiveVotes
+                ? ticket
+                  ? "Ticket ready"
+                  : "Issue ticket"
+                : "Proposal closed"
+          ],
           [
             "3",
-            !proposalCanReceiveVotes
+            walletAlreadyVoted
+              ? "Local vote locked"
+              : !proposalCanReceiveVotes
               ? proposalStatus
               : testnetTransactionStatus?.status === "accepted"
               ? "Execution accepted"
@@ -889,6 +1062,11 @@ export default function Home() {
                   <span className="rounded-sm border border-stone-950 bg-[#d9ff65] px-2 py-1 text-xs font-black uppercase">
                     {proposalStatus}
                   </span>
+                  {walletAlreadyVoted ? (
+                    <span className="rounded-sm border border-stone-950 bg-[#f4c8be] px-2 py-1 text-xs font-black uppercase">
+                      wallet voted
+                    </span>
+                  ) : null}
                   <Button
                     disabled={!proposalCanReceiveVotes || isClosingProposal}
                     onClick={() => void closeSelectedProposal()}
@@ -915,22 +1093,29 @@ export default function Home() {
             <div className="grid items-center gap-4 rounded-md border border-stone-950 bg-white p-5 md:grid-cols-[1fr_auto]">
               <div>
                 <p className="text-xs font-black uppercase text-[#6f3d2f]">Private ticket</p>
-                <strong className="mt-1 block text-xl">{ticket ? "Issued" : "Not issued"}</strong>
+                <strong className="mt-1 block text-xl">
+                  {walletAlreadyVoted ? "Locked" : ticket ? "Issued" : "Not issued"}
+                </strong>
                 {ticket ? (
                   <code className="mt-2 block max-w-xs overflow-hidden text-ellipsis whitespace-nowrap text-xs text-stone-600">
                     {ticket.ticketCommitment}
                   </code>
                 ) : null}
               </div>
-              <Button disabled={!walletConnected || !proposalCanReceiveVotes || isIssuing || isProving} onClick={issueTicket}>
+              <Button
+                disabled={!walletConnected || !proposalCanReceiveVotes || walletAlreadyVoted || isIssuing || isProving}
+                onClick={issueTicket}
+              >
                 <Ticket size={16} />
                 {isIssuing
                   ? "Issuing..."
-                  : !walletConnected
-                    ? "Connect wallet first"
-                    : proposalCanReceiveVotes
-                      ? "Issue ticket"
-                      : "Proposal closed"}
+                  : walletAlreadyVoted
+                    ? "Already voted"
+                    : !walletConnected
+                      ? "Connect wallet first"
+                      : proposalCanReceiveVotes
+                        ? "Issue ticket"
+                        : "Proposal closed"}
               </Button>
             </div>
 
@@ -945,7 +1130,7 @@ export default function Home() {
 
             <Button
               className="w-full"
-              disabled={!walletConnected || !ticket || !proposalCanReceiveVotes || isProving}
+              disabled={!walletConnected || !ticket || !proposalCanReceiveVotes || walletAlreadyVoted || isProving}
               onClick={castVote}
               size="lg"
               variant="primary"
@@ -953,11 +1138,13 @@ export default function Home() {
               <Fingerprint size={18} />
               {isProving
                 ? "Generating proof..."
-                : !walletConnected
-                  ? "Connect wallet to vote"
-                  : proposalCanReceiveVotes
-                    ? "Cast private vote"
-                    : "Proposal closed"}
+                : walletAlreadyVoted
+                  ? "Already voted"
+                  : !walletConnected
+                    ? "Connect wallet to vote"
+                    : proposalCanReceiveVotes
+                      ? "Cast private vote"
+                      : "Proposal closed"}
             </Button>
 
             <p className="mt-4 text-sm font-black text-[#6f3d2f]">{message}</p>
