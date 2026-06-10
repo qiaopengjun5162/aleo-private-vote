@@ -321,3 +321,7 @@
 - Verified `pnpm --filter @aleo-private-vote/frontend typecheck`.
 - Verified `just check`: Leo tests, backend typecheck/test/build, frontend typecheck/test/build, client-ts typecheck/build, and client-rust cargo check passed.
 - Verified persistent backend runtime smoke with `just backend-dev-persistent`: `/health` returned OK, ticket issuance persisted to `.data/vote-store.json`, report submission marked the ticket spent, and a repeated voter ticket request returned 409.
+- PR #16 was merged into `main`, and PR CI run `27247842597` passed at merge commit `d4be8bed11192abecb76a401e61aac62ba48cf70`.
+- Vercel deployment `dpl_8oCgzANYEAmWsaiBneknWrVdLcgQ` is Ready.
+- `aleo-private-vote.vercel.app` points to `aleo-private-vote-dgj8uvj9b-qiaopengjuns-projects.vercel.app`.
+- Verified the deployment and alias through Vercel CLI. Production HTTP smoke from this environment could not complete because `curl` to Vercel domains failed with TLS reset/timeout, matching the existing local network limitation.

@@ -65,6 +65,7 @@
 - Use `next build --webpack` because Next 16 Turbopack tries to bind a local port in this sandbox and fails with `Operation not permitted`.
 - `pnpm --filter @aleo-private-vote/frontend typecheck` reads `.next/types`; run `pnpm --filter @aleo-private-vote/frontend build` first if those generated files are missing.
 - Vercel production deploys must run from `frontend/` with the linked project. Deploying from the repository root can fail because the root `package.json` does not declare `next`.
+- In this environment, `curl` to `*.vercel.app` can fail with TLS resets or timeouts even when Vercel CLI reports the deployment and aliases as Ready; verify production state with `vercel inspect` and `vercel alias ls` before treating it as an app regression.
 - Start the backend before the frontend for full-stack demos. If the API is unavailable, the frontend intentionally falls back to local demo mode.
 - Use `just backend-dev-persistent` when you need backend proposals, tickets, and reports to survive a local backend restart.
 - In local demo mode, the frontend persists proposals, the current ticket, latest report, local wallet vote locks, and the last wallet execution id in `localStorage` under `aleo-private-vote.session.v1`.
