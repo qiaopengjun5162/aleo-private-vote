@@ -6,6 +6,10 @@ leo-test:
 backend-dev:
     cd backend && pnpm dev
 
+backend-dev-persistent:
+    mkdir -p .data
+    cd backend && VOTE_STORE_PATH=../.data/vote-store.json pnpm dev
+
 frontend-dev:
     cd frontend && pnpm dev
 

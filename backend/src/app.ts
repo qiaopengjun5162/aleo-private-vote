@@ -1,7 +1,7 @@
 import cors from "@fastify/cors";
 import Fastify from "fastify";
 import { z } from "zod";
-import { createDemoStore, type DemoStore } from "./data.js";
+import { createDemoStore, voterProposalKey, type DemoStore } from "./data.js";
 
 type BuildServerOptions = {
   logger?: boolean;
@@ -11,11 +11,13 @@ type BuildServerOptions = {
 const reportSchema = z.object({
   proposalId: z.string().min(1),
   vote: z.enum(["agree", "disagree"]),
-  ticketCommitment: z.string().min(8)
+  ticketCommitment: z.string().min(8),
+  voter: z.string().trim().min(8)
 });
 
 const ticketSchema = z.object({
-  proposalId: z.string().min(1)
+  proposalId: z.string().min(1),
+  voter: z.string().trim().min(8)
 });
 
 const proposalSchema = z.object({
@@ -61,6 +63,7 @@ export async function buildServer(options: BuildServerOptions = {}) {
     };
 
     store.proposals.unshift(proposal);
+    await store.save();
     return proposal;
   });
 
@@ -78,6 +81,7 @@ export async function buildServer(options: BuildServerOptions = {}) {
 
     proposal.status = proposal.agreeVotes >= proposal.disagreeVotes ? "passed" : "failed";
     proposal.closedAt = new Date().toISOString();
+    await store.save();
     return proposal;
   });
 
@@ -86,6 +90,7 @@ export async function buildServer(options: BuildServerOptions = {}) {
   server.post("/api/tickets", async (request, reply) => {
     const body = ticketSchema.parse(request.body);
     const proposal = store.proposals.find((item) => item.id === body.proposalId);
+    const voterKey = voterProposalKey(body.proposalId, body.voter);
 
     if (!proposal) {
       return reply.code(404).send({ error: "Proposal not found" });
@@ -95,19 +100,44 @@ export async function buildServer(options: BuildServerOptions = {}) {
       return reply.code(409).send({ error: "Proposal is closed" });
     }
 
+    if (store.reports.some((report) => voterProposalKey(report.proposalId, report.voter) === voterKey)) {
+      return reply.code(409).send({ error: "Voter already submitted a report for this proposal" });
+    }
+
+    const existingTicket = store.tickets.find(
+      (ticket) => voterProposalKey(ticket.proposalId, ticket.voter) === voterKey && !ticket.spentAt
+    );
+    if (existingTicket) {
+      return {
+        proposalId: body.proposalId,
+        ticketCommitment: existingTicket.ticketCommitment,
+        ticketsIssued: proposal.ticketsIssued,
+        issuedAt: existingTicket.issuedAt
+      };
+    }
+
     proposal.ticketsIssued += 1;
+    const ticket = {
+      proposalId: body.proposalId,
+      ticketCommitment: `ticket-${crypto.randomUUID()}`,
+      voter: body.voter,
+      issuedAt: new Date().toISOString()
+    };
+    store.tickets.unshift(ticket);
+    await store.save();
 
     return {
       proposalId: body.proposalId,
-      ticketCommitment: `ticket-${crypto.randomUUID()}`,
+      ticketCommitment: ticket.ticketCommitment,
       ticketsIssued: proposal.ticketsIssued,
-      issuedAt: new Date().toISOString()
+      issuedAt: ticket.issuedAt
     };
   });
 
   server.post("/api/reports", async (request, reply) => {
     const body = reportSchema.parse(request.body);
     const proposal = store.proposals.find((item) => item.id === body.proposalId);
+    const voterKey = voterProposalKey(body.proposalId, body.voter);
 
     if (!proposal) {
       return reply.code(404).send({ error: "Proposal not found" });
@@ -115,6 +145,21 @@ export async function buildServer(options: BuildServerOptions = {}) {
 
     if (proposal.status !== "active") {
       return reply.code(409).send({ error: "Proposal is closed" });
+    }
+
+    if (store.reports.some((report) => voterProposalKey(report.proposalId, report.voter) === voterKey)) {
+      return reply.code(409).send({ error: "Voter already submitted a report for this proposal" });
+    }
+
+    const ticket = store.tickets.find(
+      (item) =>
+        item.proposalId === body.proposalId &&
+        item.ticketCommitment === body.ticketCommitment &&
+        voterProposalKey(item.proposalId, item.voter) === voterKey &&
+        !item.spentAt
+    );
+    if (!ticket) {
+      return reply.code(409).send({ error: "Ticket not found for voter" });
     }
 
     if (body.vote === "agree") {
@@ -129,11 +174,14 @@ export async function buildServer(options: BuildServerOptions = {}) {
       vote: body.vote,
       status: "verified" as const,
       ticketCommitment: body.ticketCommitment,
+      voter: body.voter,
       txId: `demo-${crypto.randomUUID()}`,
       createdAt: new Date().toISOString()
     };
 
+    ticket.spentAt = report.createdAt;
     store.reports.unshift(report);
+    await store.save();
     return {
       ...report,
       tally: {

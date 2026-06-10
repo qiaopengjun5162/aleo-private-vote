@@ -71,11 +71,17 @@ just execute-testnet
 just backend-dev
 ```
 
+如果希望本地后端重启后保留提案、票据和 report，可以运行：
+
+```bash
+just backend-dev-persistent
+```
+
 ```bash
 just frontend-dev
 ```
 
-前端默认连接 `http://127.0.0.1:8787`。如果后端地址不同，可以通过 `NEXT_PUBLIC_API_URL` 覆盖。
+前端默认连接 `http://127.0.0.1:8787`。如果后端地址不同，可以通过 `NEXT_PUBLIC_API_URL` 覆盖。`just backend-dev-persistent` 会把状态写入 `.data/vote-store.json`；其他环境可以用 `VOTE_STORE_PATH` 指定 Fastify 后端使用的 JSON 文件。
 
 ## 项目范围
 
@@ -85,7 +91,7 @@ just frontend-dev
 - 配置 `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` 后，可启用 Dynamic 嵌入式 Aleo 钱包入口。
 - 通过 `signMessage()` 签名 ownership challenge，并用当前连接地址本地验签。
 - 发放私密投票票据。
-- 每张 demo ticket 投一次赞成票或反对票，并在浏览器工作区阻止同一个连接钱包对同一提案重复投票。
+- 每张 demo ticket 投一次赞成票或反对票，并在浏览器工作区和后端 demo API 中阻止同一个连接钱包对同一提案重复投票。
 - 展示提案当前结果和关闭后的最终结果，规则是 `agree >= disagree` 即通过。
 - 通过 Aleo 钱包广播 `private_vote.aleo/main` 测试网 execution。
 - 钱包批准前展示 execution request，包括 program、function、inputs、network 和 public fee。
@@ -121,10 +127,12 @@ NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @al
 
 - `GET /health`：健康检查。
 - `GET /api/proposals`：返回演示提案和公开计票。
-- `POST /api/proposals`：创建一个内存里的 demo 提案。
+- `POST /api/proposals`：创建一个 demo 提案。
 - `POST /api/proposals/:proposalId/close`：关闭 active demo 提案，并标记为 passed 或 failed。
-- `POST /api/tickets`：为提案签发一个私密票据 commitment。
-- `POST /api/reports`：保存验证报告，并返回更新后的计票结果。
+- `POST /api/tickets`：为指定提案和 voter 签发或返回当前 active 私密票据 commitment。
+- `POST /api/reports`：保存指定提案和 voter 的验证报告，标记 ticket 已使用，并返回更新后的计票结果。
+
+后端默认使用内存 store。设置 `VOTE_STORE_PATH=/path/to/vote-store.json` 后，会把提案、ticket 和 report 持久化到 JSON 文件。它能提升 demo API 的重启恢复能力，但仍然不是链上 nullifier，也不是生产数据库替代品。
 
 ## 前端 API Routes
 
@@ -195,9 +203,9 @@ Rust 客户端参考当前目录里已经调通的 `hello/client-rust` 项目：
 这个项目可以很小，但产品体验仍然应该可信、清楚、可恢复：
 
 - 把浏览器投票从轻量 `main` 验证函数升级到完整 record 驱动的 `new_ticket`、`agree`、`disagree` 流程。
-- 用真实 record/nullifier 策略强制每个合格投票人只能投一次，而不是当前浏览器本地钱包投票锁。
+- 用真实 record/nullifier 策略强制每个合格投票人只能投一次，而不是当前浏览器和后端 demo guard。
 - 尽可能从链上数据读取提案状态和计票结果，而不是依赖本地 demo 状态。
-- 部署带持久化存储、限流和健康检查的后端 API。
+- 部署带 durable database、限流和健康检查的后端 API。
 - 把钱包提交交易的状态历史持久化到 durable storage，而不是只保存在浏览器里。
 - 增加恢复结果 telemetry，在不收集私密投票数据的前提下复盘高频钱包和测试网失败模式。
 - 增加端到端测试，覆盖连接钱包、签发票据、批准 execution 和 Explorer 链接展示。

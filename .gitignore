@@ -5,6 +5,7 @@ target/
 out/
 .env
 .env.local
+.data/
 .vercel/
 *.log
 *.tsbuildinfo

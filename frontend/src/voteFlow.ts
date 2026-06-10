@@ -26,6 +26,7 @@ export type VoteReport = {
   vote: VoteChoice;
   status: "verified";
   ticketCommitment: string;
+  voter?: string;
   txId: string;
   createdAt: string;
   tally?: {

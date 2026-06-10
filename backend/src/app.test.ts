@@ -1,10 +1,16 @@
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildServer } from "./app.js";
+import { createFileDemoStore } from "./data.js";
 
 const servers = new Set<Awaited<ReturnType<typeof buildServer>>>();
+const tempDirs = new Set<string>();
+const voter = "aleo1voter0000000000000000000000000000000000000000000";
 
-async function testServer() {
-  const server = await buildServer({ logger: false });
+async function testServer(options: Parameters<typeof buildServer>[0] = {}) {
+  const server = await buildServer({ logger: false, ...options });
   servers.add(server);
   await server.ready();
   return server;
@@ -12,7 +18,9 @@ async function testServer() {
 
 afterEach(async () => {
   await Promise.all([...servers].map((server) => server.close()));
+  await Promise.all([...tempDirs].map((dir) => rm(dir, { force: true, recursive: true })));
   servers.clear();
+  tempDirs.clear();
 });
 
 describe("backend API", () => {
@@ -42,7 +50,8 @@ describe("backend API", () => {
       method: "POST",
       url: "/api/tickets",
       payload: {
-        proposalId: "proposal-privacy-grants"
+        proposalId: "proposal-privacy-grants",
+        voter
       }
     });
 
@@ -107,7 +116,8 @@ describe("backend API", () => {
       method: "POST",
       url: "/api/tickets",
       payload: {
-        proposalId: "proposal-privacy-grants"
+        proposalId: "proposal-privacy-grants",
+        voter
       }
     });
 
@@ -117,6 +127,14 @@ describe("backend API", () => {
 
   it("stores a vote report and returns the updated tally", async () => {
     const server = await testServer();
+    const ticketResponse = await server.inject({
+      method: "POST",
+      url: "/api/tickets",
+      payload: {
+        proposalId: "proposal-privacy-grants",
+        voter
+      }
+    });
 
     const response = await server.inject({
       method: "POST",
@@ -124,7 +142,8 @@ describe("backend API", () => {
       payload: {
         proposalId: "proposal-privacy-grants",
         vote: "agree",
-        ticketCommitment: "ticket-vitest"
+        ticketCommitment: ticketResponse.json().ticketCommitment,
+        voter
       }
     });
 
@@ -133,14 +152,87 @@ describe("backend API", () => {
       expect.objectContaining({
         proposalId: "proposal-privacy-grants",
         vote: "agree",
+        voter,
         status: "verified",
         tally: {
           agreeVotes: 13,
           disagreeVotes: 3,
-          ticketsIssued: 21
+          ticketsIssued: 22
         }
       })
     );
+  });
+
+  it("rejects a duplicate voter report for the same proposal", async () => {
+    const server = await testServer();
+    const ticketResponse = await server.inject({
+      method: "POST",
+      url: "/api/tickets",
+      payload: {
+        proposalId: "proposal-privacy-grants",
+        voter
+      }
+    });
+
+    await server.inject({
+      method: "POST",
+      url: "/api/reports",
+      payload: {
+        proposalId: "proposal-privacy-grants",
+        vote: "agree",
+        ticketCommitment: ticketResponse.json().ticketCommitment,
+        voter
+      }
+    });
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/tickets",
+      payload: {
+        proposalId: "proposal-privacy-grants",
+        voter
+      }
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual(expect.objectContaining({ error: "Voter already submitted a report for this proposal" }));
+  });
+
+  it("persists proposals, tickets, and reports when VOTE_STORE_PATH is backed by a file store", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "aleo-private-vote-"));
+    tempDirs.add(dir);
+    const storePath = join(dir, "store.json");
+    const server = await testServer({ store: await createFileDemoStore(storePath) });
+    const ticketResponse = await server.inject({
+      method: "POST",
+      url: "/api/tickets",
+      payload: {
+        proposalId: "proposal-privacy-grants",
+        voter
+      }
+    });
+
+    await server.inject({
+      method: "POST",
+      url: "/api/reports",
+      payload: {
+        proposalId: "proposal-privacy-grants",
+        vote: "disagree",
+        ticketCommitment: ticketResponse.json().ticketCommitment,
+        voter
+      }
+    });
+
+    const persisted = JSON.parse(await readFile(storePath, "utf8"));
+    expect(persisted.proposals[0]).toEqual(
+      expect.objectContaining({
+        agreeVotes: 12,
+        disagreeVotes: 4,
+        ticketsIssued: 22
+      })
+    );
+    expect(persisted.tickets[0]).toEqual(expect.objectContaining({ voter, spentAt: expect.any(String) }));
+    expect(persisted.reports[0]).toEqual(expect.objectContaining({ voter, vote: "disagree" }));
   });
 
   it("rejects malformed reports", async () => {

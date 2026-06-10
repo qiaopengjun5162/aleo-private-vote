@@ -305,3 +305,19 @@
 - PR #15 was merged into `main`, and main CI run `27220532446` passed at merge commit `9c55d2968fcd157a98ec2f145e74cfc6638dbcc7`.
 - Vercel deployment `dpl_56mfMarr7CiLXDe6mUaBTY4NBHgd` is Ready.
 - `aleo-private-vote.vercel.app` points to `aleo-private-vote-anfs8bm4c-qiaopengjuns-projects.vercel.app`.
+
+## 2026-06-10 Backend Persistent Voter Guard
+
+- Added backend ticket records with voter ownership and spent status.
+- Required `voter` for backend ticket issuance and report submission.
+- Reused an active ticket for the same proposal and voter instead of double-counting ticket issuance.
+- Rejected duplicate backend reports for the same proposal and voter.
+- Added optional JSON file persistence through `VOTE_STORE_PATH`; `just backend-dev-persistent` writes to `.data/vote-store.json`.
+- Kept docs explicit that backend demo guards are not a chain-level record/nullifier guarantee.
+- Added backend Vitest coverage for duplicate voter rejection and JSON persistence.
+- Verified `pnpm --filter @aleo-private-vote/backend typecheck`.
+- Verified `pnpm --filter @aleo-private-vote/backend test`: 8 tests passed.
+- Verified `pnpm --filter @aleo-private-vote/frontend test`: 7 files / 31 tests passed.
+- Verified `pnpm --filter @aleo-private-vote/frontend typecheck`.
+- Verified `just check`: Leo tests, backend typecheck/test/build, frontend typecheck/test/build, client-ts typecheck/build, and client-rust cargo check passed.
+- Verified persistent backend runtime smoke with `just backend-dev-persistent`: `/health` returned OK, ticket issuance persisted to `.data/vote-store.json`, report submission marked the ticket spent, and a repeated voter ticket request returned 409.
