@@ -68,6 +68,7 @@
 - In this environment, `curl` to `*.vercel.app` can fail with TLS resets or timeouts even when Vercel CLI reports the deployment and aliases as Ready; verify production state with `vercel inspect` and `vercel alias ls` before treating it as an app regression.
 - Start the backend before the frontend for full-stack demos. If the API is unavailable, the frontend intentionally falls back to local demo mode.
 - Use `just backend-dev-persistent` when you need backend proposals, tickets, and reports to survive a local backend restart.
+- Backend state-changing routes are rate-limited with `@fastify/rate-limit`; tune them with `RATE_LIMIT_MAX` and `RATE_LIMIT_WINDOW_MS`, and tune JSON payload size with `BODY_LIMIT_BYTES`.
 - In local demo mode, the frontend persists proposals, the current ticket, latest report, local wallet vote locks, and the last wallet execution id in `localStorage` under `aleo-private-vote.session.v1`.
 - Vercel project SSO deployment protection must stay disabled for the public `aleo-private-vote.vercel.app` demo; if the live URL redirects to Vercel Login, check `vercel project protection aleo-private-vote --format json --scope qiaopengjuns-projects`.
 - Before running `just deploy-testnet`, confirm the Leo `program ...` id is unique on testnet; `private_vote.aleo` may need to be renamed for a real deployment.

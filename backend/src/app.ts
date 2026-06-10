@@ -1,10 +1,18 @@
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import { z } from "zod";
 import { createDemoStore, voterProposalKey, type DemoStore } from "./data.js";
 
+type ApiRateLimit = {
+  max: number;
+  timeWindow: number | string;
+};
+
 type BuildServerOptions = {
+  bodyLimit?: number;
   logger?: boolean;
+  rateLimit?: ApiRateLimit | false;
   store?: DemoStore;
 };
 
@@ -28,10 +36,18 @@ const proposalSchema = z.object({
 
 export async function buildServer(options: BuildServerOptions = {}) {
   const store = options.store ?? createDemoStore();
-  const server = Fastify({ logger: options.logger ?? true });
+  const apiRateLimit = options.rateLimit ?? { max: 60, timeWindow: "1 minute" };
+  const stateChangingRouteOptions = apiRateLimit === false ? {} : { config: { rateLimit: apiRateLimit } };
+  const server = Fastify({
+    bodyLimit: options.bodyLimit ?? 32 * 1024,
+    logger: options.logger ?? true
+  });
 
   await server.register(cors, {
     origin: true
+  });
+  await server.register(rateLimit, {
+    global: false
   });
 
   server.setErrorHandler((error, _request, reply) => {
@@ -43,13 +59,14 @@ export async function buildServer(options: BuildServerOptions = {}) {
   });
 
   server.get("/health", async () => ({
+    rateLimit: apiRateLimit === false ? "disabled" : "enabled",
     status: "ok",
     service: "aleo-private-vote-backend"
   }));
 
   server.get("/api/proposals", async () => store.proposals);
 
-  server.post("/api/proposals", async (request) => {
+  server.post("/api/proposals", stateChangingRouteOptions, async (request) => {
     const body = proposalSchema.parse(request.body);
     const proposal = {
       id: `proposal-${crypto.randomUUID()}`,
@@ -67,7 +84,7 @@ export async function buildServer(options: BuildServerOptions = {}) {
     return proposal;
   });
 
-  server.post("/api/proposals/:proposalId/close", async (request, reply) => {
+  server.post("/api/proposals/:proposalId/close", stateChangingRouteOptions, async (request, reply) => {
     const params = z.object({ proposalId: z.string().min(1) }).parse(request.params);
     const proposal = store.proposals.find((item) => item.id === params.proposalId);
 
@@ -87,7 +104,7 @@ export async function buildServer(options: BuildServerOptions = {}) {
 
   server.get("/api/reports", async () => store.reports);
 
-  server.post("/api/tickets", async (request, reply) => {
+  server.post("/api/tickets", stateChangingRouteOptions, async (request, reply) => {
     const body = ticketSchema.parse(request.body);
     const proposal = store.proposals.find((item) => item.id === body.proposalId);
     const voterKey = voterProposalKey(body.proposalId, body.voter);
@@ -134,7 +151,7 @@ export async function buildServer(options: BuildServerOptions = {}) {
     };
   });
 
-  server.post("/api/reports", async (request, reply) => {
+  server.post("/api/reports", stateChangingRouteOptions, async (request, reply) => {
     const body = reportSchema.parse(request.body);
     const proposal = store.proposals.find((item) => item.id === body.proposalId);
     const voterKey = voterProposalKey(body.proposalId, body.voter);

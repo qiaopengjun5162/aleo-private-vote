@@ -233,6 +233,8 @@ When this variable is missing, the unified wallet modal keeps the Dynamic option
 
 By default the backend store is in-memory. Set `VOTE_STORE_PATH=/path/to/vote-store.json` to persist proposals, tickets, and reports to a JSON file. This improves restart recovery for the demo API, but it is still not a chain-level nullifier or a substitute for a production database.
 
+State-changing backend routes are rate-limited with `@fastify/rate-limit`; `GET /health` and `GET /api/proposals` stay open for monitoring and public reads. Configure `RATE_LIMIT_MAX` and `RATE_LIMIT_WINDOW_MS` to tune write limits, and `BODY_LIMIT_BYTES` to tune the JSON request body limit.
+
 ## Frontend API Routes
 
 - `GET /api/testnet/transactions/:txId`: query the Provable testnet API for a submitted transaction and normalize it into `checking`, `pending`, `accepted`, or `unavailable`.
