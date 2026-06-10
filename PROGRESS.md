@@ -325,3 +325,13 @@
 - Vercel deployment `dpl_8oCgzANYEAmWsaiBneknWrVdLcgQ` is Ready.
 - `aleo-private-vote.vercel.app` points to `aleo-private-vote-dgj8uvj9b-qiaopengjuns-projects.vercel.app`.
 - Verified the deployment and alias through Vercel CLI. Production HTTP smoke from this environment could not complete because `curl` to Vercel domains failed with TLS reset/timeout, matching the existing local network limitation.
+
+## 2026-06-10 Backend API Rate Limits
+
+- Added `@fastify/rate-limit` to protect backend routes that change proposal, ticket, or report state.
+- Kept `GET /health` and `GET /api/proposals` outside the state-changing route limit for monitoring and public reads.
+- Added configurable backend limits through `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS`, and `BODY_LIMIT_BYTES`.
+- Added backend Vitest coverage for health checks outside the limiter, 429 responses on limited write routes, and 413 responses for oversized request bodies.
+- Verified `pnpm --filter @aleo-private-vote/backend typecheck`.
+- Verified `pnpm --filter @aleo-private-vote/backend test`: 11 tests passed.
+- Verified `just check`: Leo tests, backend typecheck/test/build, frontend typecheck/test/build, client-ts typecheck/build, and client-rust cargo check passed.

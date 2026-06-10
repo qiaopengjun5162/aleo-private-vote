@@ -24,6 +24,29 @@ afterEach(async () => {
 });
 
 describe("backend API", () => {
+  it("keeps health checks outside the state-changing API rate limit", async () => {
+    const server = await testServer({ rateLimit: { max: 1, timeWindow: 60_000 } });
+
+    const firstResponse = await server.inject({
+      method: "GET",
+      url: "/health"
+    });
+    const secondResponse = await server.inject({
+      method: "GET",
+      url: "/health"
+    });
+
+    expect(firstResponse.statusCode).toBe(200);
+    expect(firstResponse.json()).toEqual(
+      expect.objectContaining({
+        rateLimit: "enabled",
+        service: "aleo-private-vote-backend",
+        status: "ok"
+      })
+    );
+    expect(secondResponse.statusCode).toBe(200);
+  });
+
   it("returns the demo proposal", async () => {
     const server = await testServer();
 
@@ -63,6 +86,47 @@ describe("backend API", () => {
       })
     );
     expect(response.json().ticketCommitment).toMatch(/^ticket-/);
+  });
+
+  it("rate limits state-changing API routes", async () => {
+    const server = await testServer({ rateLimit: { max: 1, timeWindow: 60_000 } });
+
+    await server.inject({
+      method: "POST",
+      url: "/api/tickets",
+      payload: {
+        proposalId: "proposal-privacy-grants",
+        voter
+      }
+    });
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/tickets",
+      payload: {
+        proposalId: "proposal-privacy-grants",
+        voter: "aleo1limited000000000000000000000000000000000000000"
+      }
+    });
+
+    expect(response.statusCode).toBe(429);
+    expect(response.headers["retry-after"]).toBeDefined();
+  });
+
+  it("rejects oversized request bodies before validation", async () => {
+    const server = await testServer({ bodyLimit: 128 });
+
+    const response = await server.inject({
+      method: "POST",
+      url: "/api/proposals",
+      payload: {
+        title: "Large proposal",
+        description: "x".repeat(512),
+        proposer: "aleo1creator0000000000000000000000000000000000000000"
+      }
+    });
+
+    expect(response.statusCode).toBe(413);
   });
 
   it("creates and closes a demo proposal", async () => {

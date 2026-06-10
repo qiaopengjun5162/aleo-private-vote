@@ -134,6 +134,8 @@ NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id pnpm --filter @al
 
 后端默认使用内存 store。设置 `VOTE_STORE_PATH=/path/to/vote-store.json` 后，会把提案、ticket 和 report 持久化到 JSON 文件。它能提升 demo API 的重启恢复能力，但仍然不是链上 nullifier，也不是生产数据库替代品。
 
+会改变状态的后端 route 使用 `@fastify/rate-limit` 限流；`GET /health` 和 `GET /api/proposals` 保持开放，用于监控和公开读取。可以用 `RATE_LIMIT_MAX`、`RATE_LIMIT_WINDOW_MS` 调整写接口限流，用 `BODY_LIMIT_BYTES` 调整 JSON 请求体大小限制。
+
 ## 前端 API Routes
 
 - `GET /api/testnet/transactions/:txId`：查询 Provable testnet API 中的钱包提交交易，并统一返回 `checking`、`pending`、`accepted` 或 `unavailable`。
