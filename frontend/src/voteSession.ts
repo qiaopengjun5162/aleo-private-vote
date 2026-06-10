@@ -113,6 +113,7 @@ function normalizeReport(value: unknown, proposalIds: Set<string>): VoteReport |
   const proposalId = stringValue(value.proposalId);
   const vote = value.vote === "disagree" ? "disagree" : value.vote === "agree" ? "agree" : null;
   const ticketCommitment = stringValue(value.ticketCommitment);
+  const voter = stringValue(value.voter);
   const txId = stringValue(value.txId);
   const createdAt = stringValue(value.createdAt);
 
@@ -126,6 +127,7 @@ function normalizeReport(value: unknown, proposalIds: Set<string>): VoteReport |
     vote,
     status: "verified",
     ticketCommitment,
+    ...(voter ? { voter } : {}),
     txId,
     createdAt
   };

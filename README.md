@@ -33,6 +33,8 @@ Voting is a natural privacy use case: voters should be able to cast a choice wit
 - Proposal room with selectable demo proposals, wallet-authored proposal creation, and active / passed / failed state.
 - Browser-persisted voting workspace for local proposals, tickets, reports, and the last submitted wallet execution.
 - Local one-wallet-per-proposal guard in the browser workspace while the real record/nullifier design remains on the roadmap.
+- Backend voter guard that reuses active tickets and rejects duplicate reports for the same proposal and voter.
+- Optional backend JSON persistence through `VOTE_STORE_PATH` for local or small self-hosted deployments.
 - Local Aleo SDK execution in a browser Web Worker before wallet approval.
 - Testnet wallet execution for `private_vote.aleo/main`.
 - Same-origin testnet transaction status checks after wallet submission.
@@ -126,6 +128,12 @@ Run the backend API:
 just backend-dev
 ```
 
+Run the backend with a local JSON store:
+
+```bash
+just backend-dev-persistent
+```
+
 Run local SDK checks:
 
 ```bash
@@ -165,7 +173,7 @@ just backend-dev
 just frontend-dev
 ```
 
-The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUBLIC_API_URL` when needed.
+The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUBLIC_API_URL` when needed. `just backend-dev-persistent` writes state to `.data/vote-store.json`; for other environments, set `VOTE_STORE_PATH` to the JSON file path you want the Fastify backend to use.
 
 ## Requirements
 
@@ -182,7 +190,7 @@ The frontend uses `http://127.0.0.1:8787` by default. Override it with `NEXT_PUB
 - Optionally enable a Dynamic embedded Aleo wallet entry when `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is configured.
 - Sign and verify a wallet ownership challenge against the connected address.
 - Issue private voting tickets.
-- Cast one agree or disagree vote per issued demo ticket, with a browser workspace guard that blocks the same connected wallet from voting twice on the same proposal locally.
+- Cast one agree or disagree vote per issued demo ticket, with both a browser workspace guard and backend voter guard that block the same connected wallet from voting twice on the same proposal in the demo API.
 - Show current and final proposal outcomes using the `agree >= disagree` rule.
 - Submit an Aleo wallet testnet execution for `private_vote.aleo/main`.
 - Preview the wallet execution request before approval, including program, function, inputs, network, and public fee.
@@ -218,10 +226,12 @@ When this variable is missing, the unified wallet modal keeps the Dynamic option
 
 - `GET /health`: health check.
 - `GET /api/proposals`: list demo proposals and public tallies.
-- `POST /api/proposals`: create an in-memory demo proposal.
+- `POST /api/proposals`: create a demo proposal.
 - `POST /api/proposals/:proposalId/close`: close an active demo proposal as passed or failed.
-- `POST /api/tickets`: issue a private ticket commitment for a proposal.
-- `POST /api/reports`: store a verified demo vote report and return the updated tally.
+- `POST /api/tickets`: issue or return the active private ticket commitment for a proposal and voter.
+- `POST /api/reports`: store a verified demo vote report for a proposal and voter, mark the ticket spent, and return the updated tally.
+
+By default the backend store is in-memory. Set `VOTE_STORE_PATH=/path/to/vote-store.json` to persist proposals, tickets, and reports to a JSON file. This improves restart recovery for the demo API, but it is still not a chain-level nullifier or a substitute for a production database.
 
 ## Frontend API Routes
 
@@ -292,9 +302,9 @@ The Rust client follows the working pattern from the local `hello/client-rust` p
 This project is intentionally kept small, but it should still behave like a trustworthy product surface:
 
 - Move browser voting from the lightweight `main` verifier to the full record-based `new_ticket`, `agree`, and `disagree` flow.
-- Enforce one vote per eligible voter with a real record/nullifier strategy instead of the current browser-local wallet guard.
+- Enforce one vote per eligible voter with a real record/nullifier strategy instead of the current browser and backend demo guards.
 - Read proposal state and tallies from chain data instead of local demo state whenever possible.
-- Deploy the backend API with persistent storage, rate limits, and health checks.
+- Deploy the backend API with durable database storage, rate limits, and health checks.
 - Persist wallet-submitted transaction status history in durable storage instead of only browser storage.
 - Add telemetry for recovery outcomes so repeated wallet/testnet failure modes can be reviewed without collecting private voting data.
 - Add end-to-end tests for connect wallet, issue ticket, approve execution, and Explorer-link display.

@@ -726,7 +726,7 @@ export default function Home() {
             headers: {
               "Content-Type": "application/json"
             },
-            body: JSON.stringify({ proposalId: proposal.id })
+            body: JSON.stringify({ proposalId: proposal.id, voter: publicKey })
           })
         );
 
@@ -816,6 +816,7 @@ export default function Home() {
         vote: choice,
         status: "verified",
         ticketCommitment: ticket.ticketCommitment,
+        voter: publicKey,
         txId: reportTxId,
         createdAt: votedAt
       } satisfies VoteReport;
@@ -831,7 +832,8 @@ export default function Home() {
               body: JSON.stringify({
                 proposalId: proposal.id,
                 vote: choice,
-                ticketCommitment: ticket.ticketCommitment
+                ticketCommitment: ticket.ticketCommitment,
+                voter: publicKey
               })
             })
           );
