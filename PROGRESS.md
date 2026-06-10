@@ -335,3 +335,15 @@
 - Verified `pnpm --filter @aleo-private-vote/backend typecheck`.
 - Verified `pnpm --filter @aleo-private-vote/backend test`: 11 tests passed.
 - Verified `just check`: Leo tests, backend typecheck/test/build, frontend typecheck/test/build, client-ts typecheck/build, and client-rust cargo check passed.
+
+## 2026-06-10 v0.2.0 Release Readiness
+
+- Added `FINAL_REPORT.md` with live demo, source repository, testnet evidence, completed product scope, run commands, acceptance checks, known boundaries, and next production steps.
+- Added `CHANGELOG.md` for `v0.2.0` and preserved `v0.1.0` as the earlier testnet MVP release.
+- Bumped private workspace package versions from `0.1.0` to `0.2.0`.
+- Linked the release report and changelog from the English and Chinese READMEs.
+- Verified `git diff --check`.
+- Verified `pnpm --filter @aleo-private-vote/backend test`: 11 tests passed.
+- Verified `pnpm --filter @aleo-private-vote/frontend test`: 7 files / 31 tests passed.
+- Verified `pnpm --filter @aleo-private-vote/frontend build`.
+- Verified `just check`: Leo tests, backend typecheck/test/build, frontend typecheck/test/build, client-ts typecheck/build, and client-rust cargo check passed.

@@ -2,6 +2,10 @@
 
 在线演示：https://aleo-private-vote.vercel.app
 
+交付报告：[FINAL_REPORT.md](FINAL_REPORT.md)
+
+更新日志：[CHANGELOG.md](CHANGELOG.md)
+
 Aleo Private Vote 是一个基于 Aleo 的隐私投票 DApp，用于演示私密票据驱动的投票流程。
 
 项目基于官方 `ProvableHQ/leo-examples` 的 `vote` 示例扩展而来，包含 Leo 程序、TypeScript SDK 调用、Rust snarkVM 客户端、后端 API 和前端 DApp 界面。

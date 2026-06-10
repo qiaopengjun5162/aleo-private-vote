@@ -13,6 +13,10 @@
 
 Live demo: [https://aleo-private-vote.vercel.app](https://aleo-private-vote.vercel.app)
 
+Release report: [FINAL_REPORT.md](FINAL_REPORT.md)
+
+Changelog: [CHANGELOG.md](CHANGELOG.md)
+
 ## Chinese Documentation
 
 中文文档请参阅 [README_zh.md](README_zh.md)。
