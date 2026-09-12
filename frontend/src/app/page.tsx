@@ -67,7 +67,10 @@ import {
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8787";
 const programId = "private_vote.aleo";
-const executionFunction = "main";
+const checkFunction = "main";
+const ticketFunction = "new_ticket";
+const voteFunction = "agree";
+const voteAgainstFunction = "disagree";
 const executionFee = 35_000;
 const executionFeeLabel = "35,000 public fee units";
 const testnetExplorerBaseUrl = "https://testnet.explorer.provable.com/transaction";
@@ -789,24 +792,41 @@ export default function Home() {
     try {
       const program = await readProgram();
       const worker = AleoWorker();
-      const [output] = await worker.localProgramExecution(program, executionFunction, plannedExecutionInputs);
 
-      setProofResult(output);
-      if (output !== "true") {
-        throw new Error(`Local Aleo execution rejected the vote: ${output}`);
+      // Step 1: Local pre-check with main(agree, disagree) — fast-fail before spending fee.
+      const [checkOutput] = await worker.localProgramExecution(program, checkFunction, plannedExecutionInputs);
+      setProofResult(checkOutput);
+      if (checkOutput !== "true") {
+        throw new Error(`Local Aleo check rejected the vote: ${checkOutput}`);
       }
 
+      // Step 2: Issue a private ticket on-chain via new_ticket(proposal_id, voter).
       setExecutionStatus("wallet-approval");
-      setMessage("Open your Aleo wallet and approve the testnet execution...");
-      const walletTxId = await executeTransaction({
+      setMessage("Step 1/2: Approve the ticket issuance (new_ticket) in your wallet...");
+      const ticketTxId = await executeTransaction({
         program: programId,
-        function: executionFunction,
-        inputs: plannedExecutionInputs,
+        function: ticketFunction,
+        inputs: [proposal.id, publicKey],
         fee: executionFee,
         privateFee: false
       });
-      setWalletExecutionId(walletTxId);
-      const reportTxId = walletTxId;
+      setWalletExecutionId(ticketTxId);
+      void loadWalletTransactionHistory();
+
+      // Step 3: Cast the vote on-chain via agree(ticket) or disagree(ticket).
+      // The wallet finds the Ticket record from the previous transaction and consumes it.
+      const voteFn = choice === "agree" ? voteFunction : voteAgainstFunction;
+      setMessage(`Step 2/2: Approve the vote (${voteFn}) in your wallet...`);
+      const voteTxId = await executeTransaction({
+        program: programId,
+        function: voteFn,
+        inputs: [],
+        fee: executionFee,
+        privateFee: false,
+        recordIndices: [0]
+      });
+      setWalletExecutionId(voteTxId);
+      const reportTxId = voteTxId;
       setExecutionStatus("submitted");
       void loadWalletTransactionHistory();
       const votedAt = new Date().toISOString();
@@ -1206,11 +1226,11 @@ export default function Home() {
                 </div>
                 <div>
                   <dt className="font-bold text-stone-600">Function</dt>
-                  <dd className="font-mono">{executionFunction}</dd>
+                  <dd className="font-mono">{ticketFunction} → {voteFunction}/{voteAgainstFunction}</dd>
                 </div>
                 <div>
                   <dt className="font-bold text-stone-600">Inputs</dt>
-                  <dd className="font-mono [overflow-wrap:anywhere]">{plannedExecutionInputs.join(", ")}</dd>
+                  <dd className="font-mono [overflow-wrap:anywhere]">ticket: {proposal.id}, {publicKey?.slice(0, 15)}…</dd>
                 </div>
                 <div>
                   <dt className="font-bold text-stone-600">Fee</dt>
