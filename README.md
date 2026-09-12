@@ -293,15 +293,18 @@ Current testnet deployment:
 - `main` interaction: `at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se` — `main 3u64 2u64` returned `true`
 - Explorer: `https://testnet.explorer.provable.com/transaction/at18jhvcs9gnjwhnqhzgu6sl5mkuyqc9vgt8h5et8sxh98udyg70vpqdyg87a`
 
-Full voting flow on-chain (propose → new_ticket → agree):
+Full voting flow on-chain (propose → new_ticket → agree → disagree):
 
 - `propose`: `at13l86zvclaruvrumace5q8cgmyafxng5hylqd8mj5tn2fdzmk4sgs97t2vs`
-- `new_ticket`: `at1vnhgkprl5458ucr2uu9vl5urpdthnxwzafwnscp0vvmvqyl9yqgse2cfss`
+- `new_ticket` (1st): `at1vnhgkprl5458ucr2uu9vl5urpdthnxwzafwnscp0vvmvqyl9yqgse2cfss`
 - `agree`: `at17rlmyjjdkj43aezjaqkkhs5sa56a0h8yuk5un0m7nf8t5r4recpqdljzh6`
+- `new_ticket` (2nd): `at1yxz97n7262jlhfzw5g5k7h483mjq5yj7x63amavwup6f2edq2syqcwlwtr`
+- `disagree`: `at1ll54t03j6776j5d72lcxdjhpqtunkrycemejlpqntc4yh92t0y8s6f0v7v`
 - On-chain mapping state confirmed via API:
   - `proposals[id]` = `{ title: 42field, content: 100field, proposer: aleo1cu0xk4... }`
-  - `tickets[id]` = `1u64`
+  - `tickets[id]` = `2u64`
   - `agree_votes[id]` = `1u64`
+  - `disagree_votes[id]` = `1u64`
 
 ## Rust Client Notes
 
@@ -316,8 +319,8 @@ The Rust client follows the working pattern from the local `hello/client-rust` p
 
 This project is intentionally kept small, but it should still behave like a trustworthy product surface:
 
-- ~~Move browser voting from the lightweight `main` verifier to the full record-based `new_ticket`, `agree`, and `disagree` flow.~~ ✅ Done: `propose`, `new_ticket`, and `agree` executed on testnet with confirmed mapping state. `disagree` and browser integration remain.
-- Add `disagree` on-chain execution and end-to-end browser flow for all four functions.
+- ~~Move browser voting from the lightweight `main` verifier to the full record-based `new_ticket`, `agree`, and `disagree` flow.~~ ✅ Done: all four functions (`propose`, `new_ticket`, `agree`, `disagree`) executed on testnet with API-confirmed mapping state (tickets=2, agree=1, disagree=1).
+- Integrate the four-function flow into the browser frontend (currently only `main` is wired to the wallet).
 - Enforce one vote per eligible voter with a real record/nullifier strategy instead of the current browser and backend demo guards.
 - Read proposal state and tallies from chain data instead of local demo state whenever possible.
 - Deploy the backend API with durable database storage, rate limits, and health checks.
