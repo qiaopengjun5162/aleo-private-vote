@@ -320,7 +320,7 @@ The Rust client follows the working pattern from the local `hello/client-rust` p
 This project is intentionally kept small, but it should still behave like a trustworthy product surface:
 
 - ~~Move browser voting from the lightweight `main` verifier to the full record-based `new_ticket`, `agree`, and `disagree` flow.~~ ✅ Done: all four functions (`propose`, `new_ticket`, `agree`, `disagree`) executed on testnet with API-confirmed mapping state (tickets=2, agree=1, disagree=1).
-- Integrate the four-function flow into the browser frontend (currently only `main` is wired to the wallet).
+- ~~Integrate the four-function flow into the browser frontend (currently only `main` is wired to the wallet).~~ ✅ Done: `castVote` now executes `new_ticket` → `agree`/`disagree` via two wallet transactions with record consumption.
 - Enforce one vote per eligible voter with a real record/nullifier strategy instead of the current browser and backend demo guards.
 - Read proposal state and tallies from chain data instead of local demo state whenever possible.
 - Deploy the backend API with durable database storage, rate limits, and health checks.
