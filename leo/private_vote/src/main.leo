@@ -1,4 +1,4 @@
-struct ProposalInfo {
+export struct ProposalInfo {
     title: field,
     content: field,
     proposer: address,
@@ -30,7 +30,7 @@ program private_vote.aleo {
     }
 
     fn propose(public info: ProposalInfo) -> (Proposal, Final) {
-        assert_eq(self.caller, info.proposer);
+        assert_eq(std::ctx::caller(), info.proposer);
 
         let id: field = BHP256::hash_to_field(info.title);
 

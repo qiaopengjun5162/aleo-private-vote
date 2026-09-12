@@ -38,14 +38,14 @@
           "ty": {
             "Primitive": "Address"
           },
-          "mode": "None"
+          "mode": "Private"
         },
         {
           "name": "id",
           "ty": {
             "Primitive": "Field"
           },
-          "mode": "None"
+          "mode": "Private"
         },
         {
           "name": "info",
@@ -57,7 +57,7 @@
               "program": "private_vote.aleo"
             }
           },
-          "mode": "None"
+          "mode": "Private"
         }
       ]
     },
@@ -71,14 +71,14 @@
           "ty": {
             "Primitive": "Address"
           },
-          "mode": "None"
+          "mode": "Private"
         },
         {
           "name": "proposal_id",
           "ty": {
             "Primitive": "Field"
           },
-          "mode": "None"
+          "mode": "Private"
         }
       ]
     }
@@ -136,166 +136,130 @@
   "functions": [
     {
       "name": "main",
-      "is_final": false,
       "inputs": [
         {
-          "name": "agree_count",
-          "ty": {
-            "Plaintext": {
+          "Plaintext": {
+            "ty": {
               "Primitive": {
                 "UInt": "U64"
               }
-            }
-          },
-          "mode": "Public"
+            },
+            "mode": "Public"
+          }
         },
         {
-          "name": "disagree_count",
-          "ty": {
-            "Plaintext": {
+          "Plaintext": {
+            "ty": {
               "Primitive": {
                 "UInt": "U64"
               }
-            }
-          },
-          "mode": "Public"
+            },
+            "mode": "Public"
+          }
         }
       ],
       "outputs": [
         {
-          "ty": {
-            "Plaintext": {
+          "Plaintext": {
+            "ty": {
               "Primitive": "Boolean"
-            }
-          },
-          "mode": "None"
+            },
+            "mode": "Private"
+          }
         }
       ]
     },
     {
       "name": "propose",
-      "is_final": true,
       "inputs": [
         {
-          "name": "info",
-          "ty": {
-            "Plaintext": {
+          "Plaintext": {
+            "ty": {
               "Struct": {
                 "path": [
                   "ProposalInfo"
                 ],
                 "program": "private_vote.aleo"
               }
-            }
-          },
-          "mode": "Public"
+            },
+            "mode": "Public"
+          }
         }
       ],
       "outputs": [
         {
-          "ty": {
-            "Record": {
-              "path": [
-                "Proposal"
-              ],
-              "program": "private_vote.aleo"
-            }
-          },
-          "mode": "None"
+          "Record": {
+            "path": [
+              "Proposal"
+            ],
+            "program": "private_vote.aleo"
+          }
         },
-        {
-          "ty": "Final",
-          "mode": "None"
-        }
+        "Final"
       ]
     },
     {
       "name": "new_ticket",
-      "is_final": true,
       "inputs": [
         {
-          "name": "proposal_id",
-          "ty": {
-            "Plaintext": {
+          "Plaintext": {
+            "ty": {
               "Primitive": "Field"
-            }
-          },
-          "mode": "Public"
+            },
+            "mode": "Public"
+          }
         },
         {
-          "name": "voter",
-          "ty": {
-            "Plaintext": {
+          "Plaintext": {
+            "ty": {
               "Primitive": "Address"
-            }
-          },
-          "mode": "None"
+            },
+            "mode": "Private"
+          }
         }
       ],
       "outputs": [
         {
-          "ty": {
-            "Record": {
-              "path": [
-                "Ticket"
-              ],
-              "program": "private_vote.aleo"
-            }
-          },
-          "mode": "None"
+          "Record": {
+            "path": [
+              "Ticket"
+            ],
+            "program": "private_vote.aleo"
+          }
         },
-        {
-          "ty": "Final",
-          "mode": "None"
-        }
+        "Final"
       ]
     },
     {
       "name": "agree",
-      "is_final": true,
       "inputs": [
         {
-          "name": "ticket",
-          "ty": {
-            "Record": {
-              "path": [
-                "Ticket"
-              ],
-              "program": "private_vote.aleo"
-            }
-          },
-          "mode": "None"
+          "Record": {
+            "path": [
+              "Ticket"
+            ],
+            "program": "private_vote.aleo"
+          }
         }
       ],
       "outputs": [
-        {
-          "ty": "Final",
-          "mode": "None"
-        }
+        "Final"
       ]
     },
     {
       "name": "disagree",
-      "is_final": true,
       "inputs": [
         {
-          "name": "ticket",
-          "ty": {
-            "Record": {
-              "path": [
-                "Ticket"
-              ],
-              "program": "private_vote.aleo"
-            }
-          },
-          "mode": "None"
+          "Record": {
+            "path": [
+              "Ticket"
+            ],
+            "program": "private_vote.aleo"
+          }
         }
       ],
       "outputs": [
-        {
-          "ty": "Final",
-          "mode": "None"
-        }
+        "Final"
       ]
     }
   ]
