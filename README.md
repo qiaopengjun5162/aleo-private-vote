@@ -290,9 +290,18 @@ Current testnet deployment:
 - Program: `private_vote.aleo`
 - Deployment transaction: `at18jhvcs9gnjwhnqhzgu6sl5mkuyqc9vgt8h5et8sxh98udyg70vpqdyg87a`
 - Fee transaction: `at1uwugmx0jhup86mhvv0xchw85jfwzyn28c2qhwzp9948l5ungzgrsrpj07y`
-- Interaction transaction: `at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se`
-- Interaction result: `main 3u64 2u64` returned `true`
+- `main` interaction: `at1pwcdsarry997563mt69tg45a8ur72mr88l609jvz2peh38emsgrqsp83se` — `main 3u64 2u64` returned `true`
 - Explorer: `https://testnet.explorer.provable.com/transaction/at18jhvcs9gnjwhnqhzgu6sl5mkuyqc9vgt8h5et8sxh98udyg70vpqdyg87a`
+
+Full voting flow on-chain (propose → new_ticket → agree):
+
+- `propose`: `at13l86zvclaruvrumace5q8cgmyafxng5hylqd8mj5tn2fdzmk4sgs97t2vs`
+- `new_ticket`: `at1vnhgkprl5458ucr2uu9vl5urpdthnxwzafwnscp0vvmvqyl9yqgse2cfss`
+- `agree`: `at17rlmyjjdkj43aezjaqkkhs5sa56a0h8yuk5un0m7nf8t5r4recpqdljzh6`
+- On-chain mapping state confirmed via API:
+  - `proposals[id]` = `{ title: 42field, content: 100field, proposer: aleo1cu0xk4... }`
+  - `tickets[id]` = `1u64`
+  - `agree_votes[id]` = `1u64`
 
 ## Rust Client Notes
 
@@ -307,7 +316,8 @@ The Rust client follows the working pattern from the local `hello/client-rust` p
 
 This project is intentionally kept small, but it should still behave like a trustworthy product surface:
 
-- Move browser voting from the lightweight `main` verifier to the full record-based `new_ticket`, `agree`, and `disagree` flow.
+- ~~Move browser voting from the lightweight `main` verifier to the full record-based `new_ticket`, `agree`, and `disagree` flow.~~ ✅ Done: `propose`, `new_ticket`, and `agree` executed on testnet with confirmed mapping state. `disagree` and browser integration remain.
+- Add `disagree` on-chain execution and end-to-end browser flow for all four functions.
 - Enforce one vote per eligible voter with a real record/nullifier strategy instead of the current browser and backend demo guards.
 - Read proposal state and tallies from chain data instead of local demo state whenever possible.
 - Deploy the backend API with durable database storage, rate limits, and health checks.
